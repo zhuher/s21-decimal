@@ -112,10 +112,6 @@ The functions return the error code:
 *Note on the numbers that do not fit into the mantissa:*
 - *When getting numbers that do not fit into the mantissa during arithmetic operations, use bank rounding (for example, 79,228,162,514,264,337,593,543,950,335 - 0.6 = 79,228,162,514,264,337,593,543,950,334)*
 
-*Note on the mod operation:*
-- *If an overflow occurred as a result, discard the fractional part (for example, 70,000,000,000,000,000,000,000,000,000 % 0.001 = 0.000)*
-
-
 ### Comparison Operators
 
 | Operator name | Operators  | Function | 
