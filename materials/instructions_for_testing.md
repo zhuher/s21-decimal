@@ -58,7 +58,7 @@ following points:
    or if you have root rights (for Ubuntu / Linux Mint / Debian) \
    ```sudo apt install valgrind``` \
    To run your executable file using this utility, type in the terminal: \
-   ```valgrind --tool=memcheck --leak-check=yes. /main. out```
+   ```valgrind --tool=memcheck --leak-check=yes  ./main.out```
    
    It is strongly recommended not to use _valgrind_ utility in OS X, use _leaks_ utility instead.
 
