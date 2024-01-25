@@ -11,6 +11,8 @@ endif
 
 all: s21_decimal.a
 
+rebuild: clean s21_decimal.a
+
 s21_decimal.a:
 	$(CC) $(CFLAGS) -c s21_decimal.c
 	ar rc s21_decimal.a s21_decimal.o
