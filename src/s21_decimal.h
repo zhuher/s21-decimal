@@ -5,6 +5,16 @@ typedef struct {
   int bits[4];
 } s21_decimal;
 
+// ERROR CODES
+#define FALSE 0;
+#define TRUE 1;
+#define OK 0;
+#define TOO_BIG 1;
+#define TOO_SMALL 2;
+#define ZERO_DIVIDING 3;
+#define CONVERT_ERROR 1;
+#define CALC_ERROR 1;
+
 int s21_add(s21_decimal v1, s21_decimal v2, s21_decimal *result);
 int s21_sub(s21_decimal v1, s21_decimal v2, s21_decimal *result);
 int s21_mul(s21_decimal v1, s21_decimal v2, s21_decimal *result);
