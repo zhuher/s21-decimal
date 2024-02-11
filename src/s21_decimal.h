@@ -3,8 +3,8 @@
 
 typedef struct {
   union {
-    int bits[4];
-    unsigned int ubits[4];
+    int data[4];
+    unsigned int udata[4];
   };
 } s21_decimal;
 
