@@ -2,7 +2,10 @@
 #define S21_DECIMAL_H
 
 typedef struct {
-  int bits[4];
+  union {
+    int bits[4];
+    unsigned int ubits[4];
+  };
 } s21_decimal;
 
 // ERROR CODES
