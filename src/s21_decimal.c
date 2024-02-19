@@ -1,23 +1,92 @@
 #include "s21_decimal.h"
 
+// #include <stdio.h>
 // TASK FUNCTIONS
-// WIP
 int s21_add(s21_decimal v1, s21_decimal v2, s21_decimal *result) {
-  unsigned int carry = 0, rval = OK;
-  for (int i = 0; i < S21_DECIMAL_SIZE_IN_INTS; ++i) {
-    unsigned int temp = v1.uint_data[i] + v2.uint_data[i] + carry;
-    carry = temp < v1.uint_data[i] || temp < v2.uint_data[i];
-    result->uint_data[i] = temp;
-    if (__s21_read_bit(*result, (S21_DECIMAL_SIZE_IN_INTS - 1) << 5)) {
-      rval = TOO_BIG;
-      break;
-    }
-  }
+  unsigned int bigv1[(S21_DECIMAL_SIZE_IN_INTS - 1) << 1],
+      bigv2[(S21_DECIMAL_SIZE_IN_INTS - 1) << 1],
+      bigresult[(S21_DECIMAL_SIZE_IN_INTS - 1) << 1], rval = OK;
+  s21_memset(bigv1, 0, sizeof(bigv1));
+  s21_memset(bigv2, 0, sizeof(bigv2));
+  s21_memset(bigresult, 0, sizeof(bigresult));
+  __s21_level(v1.uint_data, v2.uint_data, bigv1, bigv2,
+              S21_DECIMAL_SIZE_IN_INTS - 1);
+  rval = __s21_add_intfield(bigv1, bigv2, bigresult,
+                            (S21_DECIMAL_SIZE_IN_INTS - 1) << 1);
+  s21_memcpy(result, bigresult,
+             (S21_DECIMAL_SIZE_IN_INTS - 1) * sizeof(bigresult[0]));
+  // TODO: deexponentiate le result
+  if (__s21_get_top_bit(bigresult, ((S21_DECIMAL_SIZE_IN_INTS - 1) << 1)) >
+      ((S21_DECIMAL_SIZE_IN_INTS - 1) << 5) - 1)
+    rval = TOO_BIG;
   return rval;
+  // return __s21_add_intfield(v1.uint_data, v2.uint_data, result->uint_data,
+  // S21_DECIMAL_SIZE_IN_INTS - 1);
+}
+// WIP
+S21_STATIC_KEYWORD int __s21_add_intfield(const unsigned int v1[],
+                                          const unsigned int v2[],
+                                          unsigned int result[],
+                                          unsigned int intfield_size) {
+  unsigned int carry = 0;
+  for (int i = 0; i < intfield_size; ++i) {
+    unsigned int temp = v1[i] + v2[i] + carry;
+    carry = temp < v1[i] || temp < v2[i];
+    result[i] = temp;
+  }
+  return carry;
 }
 // TODO
 // int s21_sub(s21_decimal v1, s21_decimal v2, s21_decimal *result) {}
-// int s21_mul(s21_decimal v1, s21_decimal v2, s21_decimal *result) {}
+int s21_mul(s21_decimal v1, s21_decimal v2, s21_decimal *result) {
+  s21_memset(result->uint_data, 0, sizeof(s21_decimal));
+  unsigned int rval =
+      __s21_mul_intfield(v1.uint_data, v2.uint_data, result->uint_data,
+                         S21_DECIMAL_SIZE_IN_INTS - 1);
+  // result->sign = v1.sign ^ v2.sign;
+  result->uint_data[S21_DECIMAL_SIZE_IN_INTS - 1] =
+      (v1.uint_data[S21_DECIMAL_SIZE_IN_INTS - 1] & 0x80000000) ^
+      (v2.uint_data[S21_DECIMAL_SIZE_IN_INTS - 1] & 0x80000000);
+  // printf("result->uint_data[S21_DECIMAL_SIZE_IN_INTS - 1]: %u\n",
+  //        result->uint_data[S21_DECIMAL_SIZE_IN_INTS - 1]);
+  // printf("v1.uint_data[S21_DECIMAL_SIZE_IN_INTS - 1]: %u\n",
+  //        v1.uint_data[S21_DECIMAL_SIZE_IN_INTS - 1]);
+  // printf("v2.uint_data[S21_DECIMAL_SIZE_IN_INTS - 1]: %u\n",
+  //        v2.uint_data[S21_DECIMAL_SIZE_IN_INTS - 1]);
+  // // print rval
+  // if (rval == TOO_SMALL) {
+  //   printf("TOO_SMALL\n");
+  // } else if (rval == TOO_BIG) {
+  //   printf("TOO_BIG\n");
+  // } else {
+  //   printf("OK\n");
+  // }
+  // exponent is the sum of the exponents of the two numbers being multiplied
+  __s21_write_exponent(
+      result->uint_data,
+      __s21_read_exponent(v1.uint_data) + __s21_read_exponent(v2.uint_data));
+  if (__s21_read_exponent((*result).uint_data) > 28) rval = TOO_SMALL;
+  return rval;
+}
+S21_STATIC_KEYWORD int __s21_mul_intfield(const unsigned int v1[],
+                                          const unsigned int v2[],
+                                          unsigned int result[],
+                                          unsigned int intfield_size) {
+  unsigned int temp[intfield_size];
+  s21_memset(temp, 0, intfield_size * sizeof(v1[0]));
+  unsigned int rval = OK;
+  unsigned int i = (intfield_size * (sizeof(v1[0]) << 3)) - 1;
+  while (rval == OK) {
+    if (__s21_read_bit(v2, i)) {
+      __s21_left_shift_intfield(v1, i, temp, intfield_size);
+      rval = __s21_add_intfield(result, temp, result, intfield_size);
+      ;
+    }
+    if (i == 0) break;
+    --i;
+  }
+  return rval;
+}
 // int s21_div(s21_decimal v1, s21_decimal v2, s21_decimal *result) {}
 //
 // int s21_is_less(s21_decimal v1, s21_decimal v2) {}
@@ -39,180 +108,180 @@ int s21_add(s21_decimal v1, s21_decimal v2, s21_decimal *result) {
 
 // OTHER FUNCTIONS
 
-// Function to initialize(and memset) a decimal to 0
-s21_decimal s21_decimal_init(void) {
-  // Initialize the return value
-  s21_decimal rval;
-  // Memset all the bytes to 0
-  for (int i = 0; i < sizeof(s21_decimal); ++i) {
-    ((char *)&rval)[i] = 0;
+S21_STATIC_KEYWORD void __s21_swap(unsigned int *a, unsigned int *b) {
+  *a = *a ^ *b;
+  *b = *a ^ *b;
+  *a = *a ^ *b;
+}
+// not ready
+S21_STATIC_KEYWORD unsigned int __s21_level(unsigned int a[], unsigned int b[],
+                                            unsigned int a_extended[],
+                                            unsigned int b_extended[],
+                                            unsigned int intfield_size) {
+  unsigned int exp_a = __s21_read_exponent(a), exp_b = __s21_read_exponent(b),
+               exp_diff = MAX(exp_a, exp_b) - MIN(exp_a, exp_b),
+               tenpower[intfield_size << 1], ten[intfield_size << 1],
+               tempten[intfield_size << 1], rval = OK;
+  s21_memset(tenpower, 0, sizeof(tenpower));
+  s21_memset(ten, 0, sizeof(ten));
+  s21_memset(tempten, 0, sizeof(tempten));
+  if (MAX(exp_a, exp_b) > S21_MAX_DECIMAL_EXPONENT)
+    rval = CONVERT_ERROR;
+  else if (exp_diff > 28) {
+    rval = TOO_SMALL;
+  } else {
+    tenpower[0] = 1;
+    ten[0] = 10;
+    for (unsigned int i = 0; i < exp_diff; ++i) {
+      __s21_mul_intfield(tenpower, ten, tempten, intfield_size << 1);
+      s21_memcpy(tenpower, tempten, sizeof(tempten));
+      s21_memset(tempten, 0, sizeof(tempten));
+    }
+    s21_memcpy(a_extended, a, intfield_size * sizeof(a[0]));
+    s21_memcpy(b_extended, b, intfield_size * sizeof(a[0]));
+    s21_memset(tempten, 0, sizeof(tempten));
+    if (exp_a < exp_b) {
+      __s21_write_exponent(a, exp_b);
+      __s21_mul_intfield(a_extended, tenpower, tempten, intfield_size << 1);
+      s21_memcpy(a_extended, tempten, sizeof(tempten));
+    } else {
+      __s21_write_exponent(b, exp_a);
+      __s21_mul_intfield(b_extended, tenpower, tempten, intfield_size << 1);
+      s21_memcpy(b_extended, tempten, sizeof(tempten));
+    }
   }
-  // Return the return value
   return rval;
+}
+
+void *s21_memset(void *data, char value, unsigned int size) {
+  for (unsigned int i = 0; i < size; ++i) {
+    ((char *)data)[i] = value;
+  }
+  return data;
 };
 
-// Function to shift a decimal to the left by one
-S21_STATIC_KEYWORD unsigned int __s21_left_shift_one(s21_decimal value,
-                                                     s21_decimal *result) {
-  // Initialize the carry and the return value
-  unsigned int carry = 0, rval = OK;
-  // Loop through all but the last data unit in reverse order
-  for (int i = S21_DECIMAL_SIZE_IN_INTS - 2; i >= 0; --i) {
-    // Check if the result is too big
-    if (__s21_read_bit(*result, 96)) {
-      // Set the return value to TOO_BIG and break the loop
-      rval = TOO_BIG;
-      break;
-    }
-    // Shift the value to the left by one, accounting for the carry
-    unsigned int temp = value.uint_data[i] << 1 | carry;
-    // Update the carry
-    carry = value.uint_data[i] >> 31;
-    // Update the result
-    result->uint_data[i] = temp;
+void *s21_memcpy(void *dest, const void *src, unsigned int size) {
+  for (unsigned int i = 0; i < size; ++i) {
+    // printf("Copying %u to byte %u\n", ((char *)src)[i], i);
+    ((char *)dest)[i] = ((char *)src)[i];
   }
-  // Return the return value
-  return rval;
+  return dest;
+}
+
+S21_STATIC_KEYWORD unsigned int __s21_left_shift_intfield_one(
+    const unsigned int value[], unsigned int result[],
+    unsigned int intfield_size) {
+  unsigned int carry = 0;
+  unsigned int i = 0;
+  do {
+    unsigned int temp = value[i] << 1 | carry;
+    carry = value[i] >> 31;
+    result[i] = temp;
+  } while (i++ < intfield_size - 1);
+  return OK;
 }
 
 // Function to shift a decimal to the left by a given amount
-S21_STATIC_KEYWORD unsigned int __s21_left_shift(s21_decimal value,
-                                                 unsigned int shift,
-                                                 s21_decimal *result) {
-  // Initialize the return value
-  unsigned int rval = OK;
-  // Shift the value to the left while the shift is not 0 and the return value
-  // is OK
-  while (shift-- && !rval) {
-    // Shift the value to the left by one
-    rval = __s21_left_shift_one(value, result);
-    // Update the value
-    value = *result;
-  }
-  // Return the return value
-  return rval;
+S21_STATIC_KEYWORD unsigned int __s21_left_shift_intfield(
+    const unsigned int value[], unsigned int shift, unsigned int result[],
+    unsigned int intfield_size) {
+  s21_memcpy(result, value, intfield_size * sizeof(result[0]));
+  while (shift--)
+    __s21_left_shift_intfield_one(result, result, S21_DECIMAL_SIZE_IN_INTS - 1);
+  return OK;
 }
-
-S21_STATIC_KEYWORD unsigned int __s21_right_shift_one(s21_decimal value,
-                                                      s21_decimal *result) {
-  // Initialize the carry and the return value
-  unsigned int carry = 0, rval = OK;
+S21_STATIC_KEYWORD unsigned int __s21_right_shift_intfield_one(
+    const unsigned int value[], unsigned int result[],
+    unsigned int intfield_size) {
+  // Initialize the carry
+  unsigned int carry = 0;
   // Loop through all but the last data unit
-  for (int i = 0; i < S21_DECIMAL_SIZE_IN_INTS - 1; ++i) {
-    // Shift the value to the right by one, accounting for the carry from the
-    // previous iteration
-    unsigned int temp = value.uint_data[i] >> 1 | carry;
+  unsigned int i = intfield_size - 1;
+  do {
+    // Shift the value to the right by one, accounting for the carry
+    unsigned int temp = value[i] >> 1 | carry;
     // Update the carry
-    carry = (value.uint_data[i] & 1) << 31;
+    carry = (value[i] & 1) << 31;
     // Update the result
-    result->uint_data[i] = temp;
-  }
-  // Return the return value
-  return rval;
+    result[i] = temp;
+  } while (i--);
+  // Always succeeds
+  return OK;
 }
 
-S21_STATIC_KEYWORD unsigned int __s21_right_shift(s21_decimal value,
-                                                  unsigned int shift,
-                                                  s21_decimal *result) {
-  // Initialize the return value
-  unsigned int rval = OK;
-  // Shift the value to the right while the shift is not 0 and the return value
-  // is OK
-  while (shift-- && rval == OK) {
-    // Shift the value to the right by one
-    rval = __s21_right_shift_one(value, result);
-    // Update the value
-    value = *result;
-  }
+S21_STATIC_KEYWORD unsigned int __s21_right_shift_intfield(
+    const unsigned int value[], unsigned int shift, unsigned int result[],
+    unsigned int intfield_size) {
+  // Copy the value onto the result
+  s21_memcpy(result, value, intfield_size * sizeof(result[0]));
+  // Shift the value to the right by one while the shift is not 0 and the
+  // return value is OK (might always be OK, but just in case it changes in
+  // the future)
+  while (shift--) __s21_right_shift_intfield_one(result, result, intfield_size);
   // Return the return value
-  return rval;
+  return OK;
 }
 
 S21_STATIC_KEYWORD
-unsigned int __s21_read_bits(const s21_decimal value, unsigned int bit_offset,
-                             unsigned int bit_count) {
-  // Initialize the return value and the size of the data unit
-  unsigned int rval = OK;
-  // Check if the bit offset and the bit count are valid
-  if (bit_offset < S21_DECIMAL_SIZE_IN_BITS && bit_offset >= 0 &&
-      bit_count > 0 && bit_count <= S21_DECIMAL_SIZE_IN_BITS) {
-    // Calculate the unit and the offset
-    unsigned int unit = bit_offset / S21_DECIMAL_UNIT_SIZE_IN_BITS,
-                 offset = bit_offset % S21_DECIMAL_UNIT_SIZE_IN_BITS;
-    // Check if the bits are in the same data unit
-    // If they are, then the return value is the bits from the offset
-    if (offset / S21_DECIMAL_UNIT_SIZE_IN_BITS ==
-        (offset + bit_count - 1) / S21_DECIMAL_UNIT_SIZE_IN_BITS) {
-      // Operation explained:
-      // 1. Get the bits from the offset
-      // 2. Return the result
-      rval = (value.uint_data[unit] >> offset) & ((1 << bit_count) - 1);
-    }
-    // If they are not, then the return value is the bits from the offset, and
-    // some bits from the next data unit
-    else {
-      // Operation explained:
-      // 1. Get the bits from the offset
-      // 2. Get the bits from the next data unit
-      // 3. Combine the bits from the offset and the bits from the next data
-      // unit
-      // 4. Return the result
-      rval =
-          (value.uint_data[unit] >> offset) |
-          ((value.uint_data[unit + 1] &
-            ((1 << (bit_count - (S21_DECIMAL_UNIT_SIZE_IN_BITS - offset))) - 1))
-           << (S21_DECIMAL_UNIT_SIZE_IN_BITS - offset));
-    }
-  }
+unsigned int __s21_read_bits(const unsigned int value[],
+                             const unsigned int bit_offset,
+                             const unsigned int bit_count) {
+  unsigned int rval = 0xDEADBEEF;  // This value is never used
+  unsigned int unit = bit_offset / S21_DECIMAL_UNIT_SIZE_IN_BITS,
+               offset = bit_offset % S21_DECIMAL_UNIT_SIZE_IN_BITS;
+  if (offset / S21_DECIMAL_UNIT_SIZE_IN_BITS ==
+      (offset + bit_count - 1) / S21_DECIMAL_UNIT_SIZE_IN_BITS)
+    rval = (value[unit] >> offset) & ((1 << bit_count) - 1);
+  else
+    rval =
+        (value[unit] >> offset) |
+        ((value[unit + 1] &
+          ((1 << (bit_count - (S21_DECIMAL_UNIT_SIZE_IN_BITS - offset))) - 1))
+         << (S21_DECIMAL_UNIT_SIZE_IN_BITS - offset));
   return rval;
 }
 
-S21_STATIC_KEYWORD int __s21_write_bits(s21_decimal *value, unsigned int data,
-                                        unsigned int bit_offset,
-                                        unsigned int bit_count) {
-  // initialize S21_DECIMAL_UNIT_SIZE_IN_BITS
-  unsigned int rval = -bit_offset;
-  // check if bit_offset is within the range of the decimal
-  if (bit_offset < S21_DECIMAL_SIZE_IN_BITS && bit_offset >= 0 &&
-      bit_count > 0 && bit_count <= S21_DECIMAL_SIZE_IN_BITS) {
-    // calculate the unit and offset of the bit_offset
-    unsigned int unit = bit_offset / S21_DECIMAL_UNIT_SIZE_IN_BITS,
-                 offset = bit_offset % S21_DECIMAL_UNIT_SIZE_IN_BITS;
-    // check if the bits to be written are within the same unit
-    // if the bits to be written are within the same unit
-    if (offset / S21_DECIMAL_UNIT_SIZE_IN_BITS ==
-        (offset + bit_count - 1) / S21_DECIMAL_UNIT_SIZE_IN_BITS) {
-      // clear the bits to be written
-      value->uint_data[unit] &= ~(((1 << bit_count) - 1) << offset);
-      // write the bits to the decimal
-      value->uint_data[unit] |= (data << offset);
-    }
-    // if the bits to be written are not within the same unit
-    else {
-      // clear the bits of the first unit to be written
-      value->uint_data[unit] &=
-          ~((1 << (S21_DECIMAL_UNIT_SIZE_IN_BITS - offset)) - 1);
-      // write the bits to the first unit
-      value->uint_data[unit] |= (data << offset);
-      // clear the bits of the second unit to be written
-      value->uint_data[unit + 1] &=
-          ~((1 << (bit_count - (S21_DECIMAL_UNIT_SIZE_IN_BITS - offset))) - 1);
-      // write the bits to the second unit
-      value->uint_data[unit + 1] |=
-          (data >> (S21_DECIMAL_UNIT_SIZE_IN_BITS - offset));
-    }
-    rval = OK;
+S21_STATIC_KEYWORD int __s21_write_bits(unsigned int value[],
+                                        const unsigned int data,
+                                        const unsigned int bit_offset,
+                                        const unsigned int bit_count) {
+  unsigned int unit = bit_offset / S21_DECIMAL_UNIT_SIZE_IN_BITS,
+               offset = bit_offset % S21_DECIMAL_UNIT_SIZE_IN_BITS;
+  if (offset / S21_DECIMAL_UNIT_SIZE_IN_BITS ==
+      (offset + bit_count - 1) / S21_DECIMAL_UNIT_SIZE_IN_BITS) {
+    value[unit] &= bit_count == S21_DECIMAL_UNIT_SIZE_IN_BITS
+                       ? 0
+                       : ~(((1 << bit_count) - 1) << offset);
+    value[unit] |= ((bit_count == S21_DECIMAL_UNIT_SIZE_IN_BITS
+                         ? ~(unsigned int)(0)
+                         : (((1 << bit_count) - 1) << offset)) &
+                    (data << offset));
+  } else {
+    value[unit] &= ((1 << offset) - 1);
+    value[unit] |= (~((1 << offset) - 1) & (data << offset));
+    value[unit + 1] &=
+        ~((1 << (bit_count - (S21_DECIMAL_UNIT_SIZE_IN_BITS - offset))) - 1);
+    value[unit + 1] |= (data >> (S21_DECIMAL_UNIT_SIZE_IN_BITS - offset));
   }
-  return rval;
+  return OK;
 }
 
-S21_STATIC_KEYWORD int __s21_toggle_bit(s21_decimal *value,
-                                        unsigned int bit_offset) {
-  unsigned int rval = -bit_offset;
+S21_STATIC_KEYWORD int __s21_toggle_bit(unsigned int value[],
+                                        const unsigned int bit_offset) {
+  int rval = -bit_offset;
   if (bit_offset < S21_DECIMAL_SIZE_IN_BITS && bit_offset >= 0) {
-    value->uint_data[bit_offset / S21_DECIMAL_UNIT_SIZE_IN_BITS] ^=
+    value[bit_offset / S21_DECIMAL_UNIT_SIZE_IN_BITS] ^=
         (1 << (bit_offset % S21_DECIMAL_UNIT_SIZE_IN_BITS));
     rval = OK;
   }
   return rval;
+}
+
+S21_STATIC_KEYWORD int __s21_get_top_bit(const unsigned int value[],
+                                         unsigned int intfield_size) {
+  unsigned int i = (intfield_size * sizeof(value[0]) << 3) - 1;
+  while (i >= 0) {
+    if (__s21_read_bits(value, i, 1)) return i;
+    --i;
+  }
 }
