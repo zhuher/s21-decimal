@@ -1,37 +1,55 @@
 #include "s21_decimal.h"
 
 // #include <stdio.h>
+
 // TASK FUNCTIONS
 int s21_add(s21_decimal v1, s21_decimal v2, s21_decimal *result) {
-  unsigned int bigv1[(S21_DECIMAL_SIZE_IN_INTS - 1) << 1],
-      bigv2[(S21_DECIMAL_SIZE_IN_INTS - 1) << 1],
-      bigresult[(S21_DECIMAL_SIZE_IN_INTS - 1) << 1], rval = OK;
-  s21_memset(bigv1, 0, sizeof(bigv1));
-  s21_memset(bigv2, 0, sizeof(bigv2));
-  s21_memset(bigresult, 0, sizeof(bigresult));
-  __s21_level(v1.uint_data, v2.uint_data, bigv1, bigv2,
-              S21_DECIMAL_SIZE_IN_INTS - 1);
-  rval = __s21_add_intfield(bigv1, bigv2, bigresult,
-                            (S21_DECIMAL_SIZE_IN_INTS - 1) << 1);
-  s21_memcpy(result, bigresult,
-             (S21_DECIMAL_SIZE_IN_INTS - 1) * sizeof(bigresult[0]));
+  uint32_t double_mantissa_size = (S21_DECIMAL_SIZE_IN_INTS - 1) << 1,
+           v1_double_mantissa[double_mantissa_size],
+           v2_double_mantissa[double_mantissa_size],
+           res_double_mantissa[double_mantissa_size], rval = OK, old_exp = 0;
+  uint8_t diff_signs = (__s21_decimal_sign(v1) != __s21_decimal_sign(v2));
+  int16_t v_cmp =
+      s21_rmemcmp(v1.uint_data, v2.uint_data, double_mantissa_size << 1);
+
+  s21_memset(v1_double_mantissa, 0, sizeof(v1_double_mantissa));
+  s21_memset(v2_double_mantissa, 0, sizeof(v2_double_mantissa));
+  s21_memset(res_double_mantissa, 0, sizeof(res_double_mantissa));
+  __s21_level(&v1, &v2, v1_double_mantissa, v2_double_mantissa,
+              double_mantissa_size >> 1, &old_exp);
+  rval = diff_signs
+             ? __s21_sub_intfield(v1_double_mantissa, v2_double_mantissa,
+                                  res_double_mantissa, double_mantissa_size)
+             : __s21_add_intfield(v1_double_mantissa, v2_double_mantissa,
+                                  res_double_mantissa, double_mantissa_size);
   // TODO: deexponentiate le result
-  if (__s21_get_top_bit(bigresult, ((S21_DECIMAL_SIZE_IN_INTS - 1) << 1)) >
-      ((S21_DECIMAL_SIZE_IN_INTS - 1) << 5) - 1)
+  // printf("v1 is %s\x1b[0m v2!\n",
+  // (v_cmp > 0 && !__s21_decimal_sign(v1) && !diff_signs) ||
+  // (!v_cmp && !__s21_decimal_sign(v1) && diff_signs) ||
+  // (v_cmp < 0 && __s21_decimal_sign(v1) && !diff_signs)
+  // ? "\x1b[32mgreater than"
+  // : (!v_cmp && __s21_decimal_sign(v1) == __s21_decimal_sign(v2))
+  // ? "\x1b[34mequal to"
+  // : "\x1b[31mless than");
+
+  s21_memcpy(result, res_double_mantissa,
+             (double_mantissa_size >> 1) * sizeof(res_double_mantissa[0]));
+  if (__s21_get_top_bit_pos(res_double_mantissa, double_mantissa_size) >
+      (double_mantissa_size << 4) - 1)
     rval = TOO_BIG;
   return rval;
   // return __s21_add_intfield(v1.uint_data, v2.uint_data, result->uint_data,
   // S21_DECIMAL_SIZE_IN_INTS - 1);
 }
 // WIP
-S21_STATIC_KEYWORD int __s21_add_intfield(const unsigned int v1[],
-                                          const unsigned int v2[],
-                                          unsigned int result[],
-                                          unsigned int intfield_size) {
-  unsigned int carry = 0;
-  for (int i = 0; i < intfield_size; ++i) {
-    unsigned int temp = v1[i] + v2[i] + carry;
-    carry = temp < v1[i] || temp < v2[i];
+S21_STATIC_KEYWORD int __s21_add_intfield(const uint32_t operand1[],
+                                          const uint32_t operand2[],
+                                          uint32_t result[],
+                                          uint32_t intfield_size) {
+  uint32_t carry = 0;
+  for (uint32_t i = 0; i < intfield_size; ++i) {
+    uint32_t temp = operand1[i] + operand2[i] + carry;
+    carry = temp < operand1[i] || temp < operand2[i];
     result[i] = temp;
   }
   return carry;
@@ -40,47 +58,32 @@ S21_STATIC_KEYWORD int __s21_add_intfield(const unsigned int v1[],
 // int s21_sub(s21_decimal v1, s21_decimal v2, s21_decimal *result) {}
 int s21_mul(s21_decimal v1, s21_decimal v2, s21_decimal *result) {
   s21_memset(result->uint_data, 0, sizeof(s21_decimal));
-  unsigned int rval =
+  uint32_t rval =
       __s21_mul_intfield(v1.uint_data, v2.uint_data, result->uint_data,
                          S21_DECIMAL_SIZE_IN_INTS - 1);
-  // result->sign = v1.sign ^ v2.sign;
+  ;
   result->uint_data[S21_DECIMAL_SIZE_IN_INTS - 1] =
       (v1.uint_data[S21_DECIMAL_SIZE_IN_INTS - 1] & 0x80000000) ^
       (v2.uint_data[S21_DECIMAL_SIZE_IN_INTS - 1] & 0x80000000);
-  // printf("result->uint_data[S21_DECIMAL_SIZE_IN_INTS - 1]: %u\n",
-  //        result->uint_data[S21_DECIMAL_SIZE_IN_INTS - 1]);
-  // printf("v1.uint_data[S21_DECIMAL_SIZE_IN_INTS - 1]: %u\n",
-  //        v1.uint_data[S21_DECIMAL_SIZE_IN_INTS - 1]);
-  // printf("v2.uint_data[S21_DECIMAL_SIZE_IN_INTS - 1]: %u\n",
-  //        v2.uint_data[S21_DECIMAL_SIZE_IN_INTS - 1]);
-  // // print rval
-  // if (rval == TOO_SMALL) {
-  //   printf("TOO_SMALL\n");
-  // } else if (rval == TOO_BIG) {
-  //   printf("TOO_BIG\n");
-  // } else {
-  //   printf("OK\n");
-  // }
-  // exponent is the sum of the exponents of the two numbers being multiplied
-  __s21_write_exponent(
-      result->uint_data,
-      __s21_read_exponent(v1.uint_data) + __s21_read_exponent(v2.uint_data));
-  if (__s21_read_exponent((*result).uint_data) > 28) rval = TOO_SMALL;
+  __s21_write_exponent(result->uint_data,
+                       __s21_read_exponent(v1) + __s21_read_exponent(v2));
+  if (__s21_read_exponent(*result) > S21_MAX_DECIMAL_EXPONENT) rval = TOO_SMALL;
   return rval;
 }
-S21_STATIC_KEYWORD int __s21_mul_intfield(const unsigned int v1[],
-                                          const unsigned int v2[],
-                                          unsigned int result[],
-                                          unsigned int intfield_size) {
-  unsigned int temp[intfield_size];
-  s21_memset(temp, 0, intfield_size * sizeof(v1[0]));
-  unsigned int rval = OK;
-  unsigned int i = (intfield_size * (sizeof(v1[0]) << 3)) - 1;
+S21_STATIC_KEYWORD int __s21_mul_intfield(const uint32_t operand1[],
+                                          const uint32_t operand2[],
+                                          uint32_t result[],
+                                          uint32_t intfield_size) {
+  uint32_t multiplication_layer[intfield_size];
+  s21_memset(multiplication_layer, 0, intfield_size * sizeof(operand1[0]));
+  uint32_t rval = OK;
+  uint32_t i = (intfield_size * (sizeof(operand1[0]) << 3)) - 1;
   while (rval == OK) {
-    if (__s21_read_bit(v2, i)) {
-      __s21_left_shift_intfield(v1, i, temp, intfield_size);
-      rval = __s21_add_intfield(result, temp, result, intfield_size);
-      ;
+    if (__s21_read_bit(operand2, i)) {
+      __s21_left_shift_intfield(operand1, i, multiplication_layer,
+                                intfield_size);
+      rval = __s21_add_intfield(result, multiplication_layer, result,
+                                intfield_size);
     }
     if (i == 0) break;
     --i;
@@ -89,7 +92,16 @@ S21_STATIC_KEYWORD int __s21_mul_intfield(const unsigned int v1[],
 }
 // int s21_div(s21_decimal v1, s21_decimal v2, s21_decimal *result) {}
 //
-// int s21_is_less(s21_decimal v1, s21_decimal v2) {}
+// int s21_is_less(s21_decimal v1, s21_decimal v2) {  // TODO
+//   uint8_t v1_is_zero =
+//               __s21_read_bits(v1.uint_data, 0, 1) ==
+//               __s21_get_top_bit_pos(v1.uint_data, S21_DECIMAL_SIZE_IN_INTS -
+//               1),
+//           v2_is_zero =
+//               __s21_read_bits(v2.uint_data, 0, 1) ==
+//               __s21_get_top_bit_pos(v2.uint_data, S21_DECIMAL_SIZE_IN_INTS -
+//               1);
+// }
 // int s21_is_less_or_equal(s21_decimal v1, s21_decimal v2) {}
 // int s21_is_greater(s21_decimal v1, s21_decimal v2) {}
 // int s21_is_greater_or_equal(s21_decimal v1, s21_decimal v2) {}
@@ -108,180 +120,168 @@ S21_STATIC_KEYWORD int __s21_mul_intfield(const unsigned int v1[],
 
 // OTHER FUNCTIONS
 
-S21_STATIC_KEYWORD void __s21_swap(unsigned int *a, unsigned int *b) {
-  *a = *a ^ *b;
-  *b = *a ^ *b;
-  *a = *a ^ *b;
+S21_STATIC_KEYWORD int __s21_sub_intfield(const uint32_t operand1[],
+                                          const uint32_t operand2[],
+                                          uint32_t result[],
+                                          uint32_t intfield_size) {
+  __s21_2s_complement_intfield(operand2, result, intfield_size);
+  __s21_add_intfield(operand1, result, result, intfield_size);
+  __s21_2s_complement_intfield(result, result, intfield_size);
+  return OK;
 }
-// not ready
-S21_STATIC_KEYWORD unsigned int __s21_level(unsigned int a[], unsigned int b[],
-                                            unsigned int a_extended[],
-                                            unsigned int b_extended[],
-                                            unsigned int intfield_size) {
-  unsigned int exp_a = __s21_read_exponent(a), exp_b = __s21_read_exponent(b),
-               exp_diff = MAX(exp_a, exp_b) - MIN(exp_a, exp_b),
-               tenpower[intfield_size << 1], ten[intfield_size << 1],
-               tempten[intfield_size << 1], rval = OK;
-  s21_memset(tenpower, 0, sizeof(tenpower));
-  s21_memset(ten, 0, sizeof(ten));
-  s21_memset(tempten, 0, sizeof(tempten));
-  if (MAX(exp_a, exp_b) > S21_MAX_DECIMAL_EXPONENT)
-    rval = CONVERT_ERROR;
-  else if (exp_diff > 28) {
-    rval = TOO_SMALL;
-  } else {
-    tenpower[0] = 1;
-    ten[0] = 10;
-    for (unsigned int i = 0; i < exp_diff; ++i) {
-      __s21_mul_intfield(tenpower, ten, tempten, intfield_size << 1);
-      s21_memcpy(tenpower, tempten, sizeof(tempten));
-      s21_memset(tempten, 0, sizeof(tempten));
-    }
-    s21_memcpy(a_extended, a, intfield_size * sizeof(a[0]));
-    s21_memcpy(b_extended, b, intfield_size * sizeof(a[0]));
-    s21_memset(tempten, 0, sizeof(tempten));
+
+S21_STATIC_KEYWORD uint32_t __s21_level(s21_decimal *a, s21_decimal *b,
+                                        uint32_t a_double_mantissa[],
+                                        uint32_t b_double_mantissa[],
+                                        uint32_t intfield_size,
+                                        uint32_t *old_exp) {
+  uint32_t exp_a = __s21_read_exponent(*a), exp_b = __s21_read_exponent(*b),
+           exp_diff = MAX(exp_a, exp_b) - MIN(exp_a, exp_b),
+           levelled_mantissa[intfield_size << 1], rval = OK;
+  s21_memset(levelled_mantissa, 0, sizeof(levelled_mantissa));
+  if (MAX(exp_a, exp_b) <= S21_MAX_DECIMAL_EXPONENT) {
+    s21_memcpy(a_double_mantissa, a->uint_data, intfield_size * sizeof(a[0]));
+    s21_memcpy(b_double_mantissa, b->uint_data, intfield_size * sizeof(a[0]));
     if (exp_a < exp_b) {
-      __s21_write_exponent(a, exp_b);
-      __s21_mul_intfield(a_extended, tenpower, tempten, intfield_size << 1);
-      s21_memcpy(a_extended, tempten, sizeof(tempten));
+      *old_exp = exp_a;
+      __s21_write_exponent(a->uint_data, exp_b);
+      __s21_mul_intfield(a_double_mantissa, powers_of_ten[exp_diff],
+                         levelled_mantissa, intfield_size << 1);
+      s21_memcpy(a_double_mantissa, levelled_mantissa,
+                 sizeof(levelled_mantissa));
     } else {
-      __s21_write_exponent(b, exp_a);
-      __s21_mul_intfield(b_extended, tenpower, tempten, intfield_size << 1);
-      s21_memcpy(b_extended, tempten, sizeof(tempten));
+      *old_exp = exp_b;
+      __s21_write_exponent(b->uint_data, exp_a);
+      __s21_mul_intfield(b_double_mantissa, powers_of_ten[exp_diff],
+                         levelled_mantissa, intfield_size << 1);
+      s21_memcpy(b_double_mantissa, levelled_mantissa,
+                 sizeof(levelled_mantissa));
     }
   }
   return rval;
 }
 
-void *s21_memset(void *data, char value, unsigned int size) {
-  for (unsigned int i = 0; i < size; ++i) {
-    ((char *)data)[i] = value;
+void *s21_memset(void *data, uint8_t value, uint32_t size /*in bytes */) {
+  for (uint32_t i = 0; i < size; ++i) {
+    ((uint8_t *)data)[i] = value;
   }
   return data;
-};
+}
 
-void *s21_memcpy(void *dest, const void *src, unsigned int size) {
-  for (unsigned int i = 0; i < size; ++i) {
-    // printf("Copying %u to byte %u\n", ((char *)src)[i], i);
-    ((char *)dest)[i] = ((char *)src)[i];
+void *s21_memcpy(void *dest, const void *src, uint32_t size /*in bytes */) {
+  for (uint32_t i = 0; i < size; ++i) {
+    ((uint8_t *)dest)[i] = ((uint8_t *)src)[i];
   }
   return dest;
 }
-
-S21_STATIC_KEYWORD unsigned int __s21_left_shift_intfield_one(
-    const unsigned int value[], unsigned int result[],
-    unsigned int intfield_size) {
-  unsigned int carry = 0;
-  unsigned int i = 0;
-  do {
-    unsigned int temp = value[i] << 1 | carry;
-    carry = value[i] >> 31;
-    result[i] = temp;
-  } while (i++ < intfield_size - 1);
-  return OK;
+int16_t s21_rmemcmp(const void *lhs, const void *rhs,
+                    uint32_t size /*in bytes */) {
+  int answ = 0;
+  --size;
+  while (!answ) {
+    // printf("lhs[%d] = %d, rhs[%d] = %d\n", size, ((uint8_t *)lhs)[size],
+    // size, ((uint8_t *)rhs)[size]);
+    answ = ((uint8_t *)lhs)[size] - ((uint8_t *)rhs)[size];
+    if (size == 0) break;
+    --size;
+  }
+  return answ;
 }
 
 // Function to shift a decimal to the left by a given amount
-S21_STATIC_KEYWORD unsigned int __s21_left_shift_intfield(
-    const unsigned int value[], unsigned int shift, unsigned int result[],
-    unsigned int intfield_size) {
-  s21_memcpy(result, value, intfield_size * sizeof(result[0]));
-  while (shift--)
-    __s21_left_shift_intfield_one(result, result, S21_DECIMAL_SIZE_IN_INTS - 1);
-  return OK;
-}
-S21_STATIC_KEYWORD unsigned int __s21_right_shift_intfield_one(
-    const unsigned int value[], unsigned int result[],
-    unsigned int intfield_size) {
-  // Initialize the carry
-  unsigned int carry = 0;
-  // Loop through all but the last data unit
-  unsigned int i = intfield_size - 1;
-  do {
-    // Shift the value to the right by one, accounting for the carry
-    unsigned int temp = value[i] >> 1 | carry;
-    // Update the carry
-    carry = (value[i] & 1) << 31;
-    // Update the result
-    result[i] = temp;
-  } while (i--);
-  // Always succeeds
-  return OK;
+S21_STATIC_KEYWORD void __s21_left_shift_intfield(const uint32_t operand[],
+                                                  uint32_t shift,
+                                                  uint32_t result[],
+                                                  uint32_t intfield_size) {
+  s21_memcpy(result, operand, intfield_size * sizeof(result[0]));
+  uint32_t carry, dword_idx, shift_step;
+  for (dword_idx = 0, shift_step = MIN(shift, 31), carry = 0; shift;
+       shift -= shift_step, dword_idx = 0, shift_step = MIN(shift, 31),
+      carry = 0)
+    do {
+      uint32_t temp = operand[dword_idx] << (shift_step) | carry;
+      carry = operand[dword_idx] >> (32 - shift_step);
+      result[dword_idx] = temp;
+    } while (dword_idx++ < intfield_size - 1);
 }
 
-S21_STATIC_KEYWORD unsigned int __s21_right_shift_intfield(
-    const unsigned int value[], unsigned int shift, unsigned int result[],
-    unsigned int intfield_size) {
-  // Copy the value onto the result
-  s21_memcpy(result, value, intfield_size * sizeof(result[0]));
-  // Shift the value to the right by one while the shift is not 0 and the
-  // return value is OK (might always be OK, but just in case it changes in
-  // the future)
-  while (shift--) __s21_right_shift_intfield_one(result, result, intfield_size);
-  // Return the return value
-  return OK;
+S21_STATIC_KEYWORD void __s21_right_shift_intfield(const uint32_t operand[],
+                                                   uint32_t shift,
+                                                   uint32_t result[],
+                                                   uint32_t intfield_size) {
+  s21_memcpy(result, operand, intfield_size * sizeof(result[0]));
+  uint32_t carry, dword_num, shift_step;
+  for (dword_num = intfield_size - 1, shift_step = MIN(shift, 31), carry = 0;
+       shift; shift -= shift_step, dword_num = intfield_size - 1,
+      shift_step = MIN(shift, 31), carry = 0)
+    do {
+      uint32_t temp = operand[dword_num] >> (shift_step) | carry;
+      carry = operand[dword_num] << (32 - shift_step);
+      result[dword_num] = temp;
+    } while (dword_num--);
+}
+
+S21_STATIC_KEYWORD void __s21_negate_intfield(const uint32_t data[],
+                                              uint32_t result[],
+                                              uint32_t intfield_size) {
+  for (uint32_t i = 0; i < intfield_size; ++i) result[i] = ~data[i];
+}
+
+S21_STATIC_KEYWORD void __s21_2s_complement_intfield(const uint32_t value[],
+                                                     uint32_t result[],
+                                                     uint32_t intfield_size) {
+  __s21_negate_intfield(value, result, intfield_size);
+  __s21_add_intfield(result, powers_of_ten[0], result, intfield_size);
 }
 
 S21_STATIC_KEYWORD
-unsigned int __s21_read_bits(const unsigned int value[],
-                             const unsigned int bit_offset,
-                             const unsigned int bit_count) {
-  unsigned int rval = 0xDEADBEEF;  // This value is never used
-  unsigned int unit = bit_offset / S21_DECIMAL_UNIT_SIZE_IN_BITS,
-               offset = bit_offset % S21_DECIMAL_UNIT_SIZE_IN_BITS;
-  if (offset / S21_DECIMAL_UNIT_SIZE_IN_BITS ==
-      (offset + bit_count - 1) / S21_DECIMAL_UNIT_SIZE_IN_BITS)
+uint32_t __s21_read_bits(const uint32_t value[], const uint32_t bit_offset,
+                         const uint32_t bit_count) {
+  uint32_t rval, unit = bit_offset / 32, offset = bit_offset % 32;
+  if (offset >> 5 == (offset + bit_count - 1) >> 5)
     rval = (value[unit] >> offset) & ((1 << bit_count) - 1);
   else
-    rval =
-        (value[unit] >> offset) |
-        ((value[unit + 1] &
-          ((1 << (bit_count - (S21_DECIMAL_UNIT_SIZE_IN_BITS - offset))) - 1))
-         << (S21_DECIMAL_UNIT_SIZE_IN_BITS - offset));
+    rval = (value[unit] >> offset) |
+           ((value[unit + 1] & ((1 << (bit_count - (32 - offset))) - 1))
+            << (32 - offset));
   return rval;
 }
 
-S21_STATIC_KEYWORD int __s21_write_bits(unsigned int value[],
-                                        const unsigned int data,
-                                        const unsigned int bit_offset,
-                                        const unsigned int bit_count) {
-  unsigned int unit = bit_offset / S21_DECIMAL_UNIT_SIZE_IN_BITS,
-               offset = bit_offset % S21_DECIMAL_UNIT_SIZE_IN_BITS;
-  if (offset / S21_DECIMAL_UNIT_SIZE_IN_BITS ==
-      (offset + bit_count - 1) / S21_DECIMAL_UNIT_SIZE_IN_BITS) {
-    value[unit] &= bit_count == S21_DECIMAL_UNIT_SIZE_IN_BITS
-                       ? 0
-                       : ~(((1 << bit_count) - 1) << offset);
-    value[unit] |= ((bit_count == S21_DECIMAL_UNIT_SIZE_IN_BITS
-                         ? ~(unsigned int)(0)
-                         : (((1 << bit_count) - 1) << offset)) &
-                    (data << offset));
-  } else {
-    value[unit] &= ((1 << offset) - 1);
-    value[unit] |= (~((1 << offset) - 1) & (data << offset));
-    value[unit + 1] &=
-        ~((1 << (bit_count - (S21_DECIMAL_UNIT_SIZE_IN_BITS - offset))) - 1);
-    value[unit + 1] |= (data >> (S21_DECIMAL_UNIT_SIZE_IN_BITS - offset));
+S21_STATIC_KEYWORD void __s21_write_bits(uint32_t data[], const uint32_t value,
+                                         const uint32_t absolute_offset,
+                                         const uint32_t bit_count) {
+  uint32_t unit = absolute_offset / 32, offset_in_unit = absolute_offset % 32,
+           shifted_mask;
+  if (offset_in_unit >> 5 == (offset_in_unit + bit_count - 1) >> 5) {
+    shifted_mask = (((1 << bit_count) - 1) << offset_in_unit);
+    data[unit] &= bit_count == 32 ? 0 : ~shifted_mask;
+    data[unit] |= ((bit_count == 32 ? ~(uint32_t)(0) : shifted_mask) &
+                   (value << offset_in_unit));
+  } else {  // could perhaps be done as a single double-sized unit by casting
+    data[unit] &= ((1 << offset_in_unit) - 1);
+    data[unit] |= (~((1 << offset_in_unit) - 1) & (value << offset_in_unit));
+    data[unit + 1] &= ~((1 << (bit_count - (32 - offset_in_unit))) - 1);
+    data[unit + 1] |= (value >> (32 - offset_in_unit));
   }
-  return OK;
 }
 
-S21_STATIC_KEYWORD int __s21_toggle_bit(unsigned int value[],
-                                        const unsigned int bit_offset) {
-  int rval = -bit_offset;
-  if (bit_offset < S21_DECIMAL_SIZE_IN_BITS && bit_offset >= 0) {
-    value[bit_offset / S21_DECIMAL_UNIT_SIZE_IN_BITS] ^=
-        (1 << (bit_offset % S21_DECIMAL_UNIT_SIZE_IN_BITS));
-    rval = OK;
-  }
-  return rval;
-}
+// S21_STATIC_KEYWORD int __s21_toggle_bit(uint32_t value[],
+//                                         const uint32_t bit_offset) {
+//   int rval = -bit_offset;
+//   if (bit_offset < S21_DECIMAL_SIZE_IN_BITS) {
+//     value[bit_offset / S21_DECIMAL_UNIT_SIZE_IN_BITS] ^=
+//         (1 << (bit_offset % S21_DECIMAL_UNIT_SIZE_IN_BITS));
+//     rval = OK;
+//   }
+//   return rval;
+// }
 
-S21_STATIC_KEYWORD int __s21_get_top_bit(const unsigned int value[],
-                                         unsigned int intfield_size) {
-  unsigned int i = (intfield_size * sizeof(value[0]) << 3) - 1;
-  while (i >= 0) {
-    if (__s21_read_bits(value, i, 1)) return i;
+S21_STATIC_KEYWORD uint32_t __s21_get_top_bit_pos(const uint32_t data[],
+                                                  uint32_t intfield_size) {
+  uint32_t i = (intfield_size << 5) - 1;
+  while (1) {
+    if (__s21_read_bits(data, i, 1) || !i) break;
     --i;
   }
+  return i;
 }
