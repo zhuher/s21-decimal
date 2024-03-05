@@ -5,7 +5,7 @@ flake.nix
 flake.lock
 
 # Miscellaneous files
-src/local/
+# src/local/
 
 # Prerequisites
 *.d

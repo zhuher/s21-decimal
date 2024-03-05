@@ -161,21 +161,24 @@ S21_STATIC_KEYWORD uint32_t __s21_level(s21_decimal *a, s21_decimal *b,
   return rval;
 }
 
-void *s21_memset(void *data, uint8_t value, uint32_t size /*in bytes */) {
+S21_STATIC_KEYWORD void *s21_memset(void *data, uint8_t value,
+                                    uint32_t size /*in bytes */) {
   for (uint32_t i = 0; i < size; ++i) {
     ((uint8_t *)data)[i] = value;
   }
   return data;
 }
 
-void *s21_memcpy(void *dest, const void *src, uint32_t size /*in bytes */) {
+S21_STATIC_KEYWORD void *s21_memcpy(void *dest, const void *src,
+                                    uint32_t size /*in bytes */) {
   for (uint32_t i = 0; i < size; ++i) {
     ((uint8_t *)dest)[i] = ((uint8_t *)src)[i];
   }
   return dest;
 }
-int16_t s21_rmemcmp(const void *lhs, const void *rhs,
-                    uint32_t size /*in bytes */) {
+
+S21_STATIC_KEYWORD int16_t s21_rmemcmp(const void *lhs, const void *rhs,
+                                       uint32_t size /*in bytes */) {
   int answ = 0;
   --size;
   while (!answ) {
@@ -257,7 +260,8 @@ S21_STATIC_KEYWORD void __s21_write_bits(uint32_t data[], const uint32_t value,
     data[unit] &= bit_count == 32 ? 0 : ~shifted_mask;
     data[unit] |= ((bit_count == 32 ? ~(uint32_t)(0) : shifted_mask) &
                    (value << offset_in_unit));
-  } else {  // could perhaps be done as a single double-sized unit by casting
+  } else {  // could perhaps be done as a single double-sized unit by
+            // casting
     data[unit] &= ((1 << offset_in_unit) - 1);
     data[unit] |= (~((1 << offset_in_unit) - 1) & (value << offset_in_unit));
     data[unit + 1] &= ~((1 << (bit_count - (32 - offset_in_unit))) - 1);

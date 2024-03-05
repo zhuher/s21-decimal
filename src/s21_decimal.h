@@ -342,11 +342,12 @@ S21_STATIC_KEYWORD void __s21_2s_complement_intfield(const uint32_t operand[],
                                                      uint32_t result[],
                                                      uint32_t intfield_size);
 
-void *s21_memset(void *data, uint8_t value, uint32_t size);
+S21_STATIC_KEYWORD void *s21_memset(void *data, uint8_t value, uint32_t size);
 
-void *s21_memcpy(void *dest, const void *src, uint32_t size);
+S21_STATIC_KEYWORD void *s21_memcpy(void *dest, const void *src, uint32_t size);
 
-int16_t s21_rmemcmp(const void *lhs, const void *rhs, uint32_t size);
+S21_STATIC_KEYWORD int16_t s21_rmemcmp(const void *lhs, const void *rhs,
+                                       uint32_t size);
 
 S21_STATIC_KEYWORD uint32_t __s21_read_bits(const uint32_t data[],
                                             const uint32_t bit_offset,
