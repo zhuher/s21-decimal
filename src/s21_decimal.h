@@ -301,13 +301,13 @@ int s21_negate(s21_decimal value, s21_decimal *result);
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
+#define IABS(a) ((a) > 0 ? (a) : -(a))
+
 S21_STATIC_KEYWORD void __s21_swap(uint32_t *a, uint32_t *b);
 
-S21_STATIC_KEYWORD uint32_t __s21_level(s21_decimal *a, s21_decimal *b,
-                                        uint32_t a_double_mantissa[],
-                                        uint32_t b_double_mantissa[],
-                                        uint32_t intfield_size,
-                                        uint32_t *old_exp);
+S21_STATIC_KEYWORD uint32_t __s21_level_mantissae(
+    s21_decimal *a, s21_decimal *b, uint32_t a_double_mantissa[],
+    uint32_t b_double_mantissa[], uint32_t intfield_size, int16_t *exp_diff);
 
 S21_STATIC_KEYWORD int __s21_add_intfield(const uint32_t operand1[],
                                           const uint32_t operand2[],
@@ -356,27 +356,36 @@ S21_STATIC_KEYWORD uint32_t __s21_read_bits(const uint32_t data[],
 #define __s21_read_bit(data, bit_offset) __s21_read_bits(data, bit_offset, 1)
 
 // Exponent is the second most significant byte
-#define __s21_read_exponent(decimal) \
+#define __s21_get_exponent(decimal) \
   ((decimal).uint_data[S21_DECIMAL_SIZE_IN_INTS - 1] >> 16 & 0xFF)
 
 // Sign is the most significant bit
-#define __s21_decimal_sign(decimal) \
+#define __s21_is_decimal_negative(decimal) \
   ((decimal).uint_data[S21_DECIMAL_SIZE_IN_INTS - 1] >> 31 & 0x1)
 
 S21_STATIC_KEYWORD void __s21_write_bits(uint32_t data[], const uint32_t value,
                                          const uint32_t bit_offset,
                                          const uint32_t bit_count);
 
-#define __s21_write_exponent(data, value) \
-  __s21_write_bits(data, value, S21_DECIMAL_SIZE_IN_BITS - 16, 8)
+#define __s21_set_exponent(decimal, value)       \
+  __s21_write_bits((decimal).uint_data, (value), \
+                   S21_DECIMAL_SIZE_IN_BITS - 16, 8)
 
 #define __s21_write_bit(data, bit_offset, value) \
   __s21_write_bits(data, value, bit_offset, 1)
+
+#define __s21_write_sign(data, value) \
+  __s21_write_bits(data, value, S21_DECIMAL_SIZE_IN_BITS - 1, 1)
 
 S21_STATIC_KEYWORD int __s21_toggle_bit(uint32_t data[],
                                         const uint32_t bit_offset);
 
 S21_STATIC_KEYWORD uint32_t __s21_get_top_bit_pos(const uint32_t data[],
                                                   uint32_t intfield_size);
+
+#define __s21_is_decimal_zero(decimal)                     \
+  !(__s21_get_top_bit_pos((decimal).uint_data,             \
+                          S21_DECIMAL_SIZE_IN_INTS - 1) || \
+    __s21_read_bit((decimal).uint_data, 0))
 
 #endif  // S21_DECIMAL_H

@@ -52,8 +52,8 @@ void s21_print_hex_bin(const s21_decimal value) {
            i < S21_DECIMAL_SIZE_IN_INTS - 1 ? '\n' : ' ');
   }
   // Print sign and exponent
-  printf(" * %c1e-%u\n", __s21_decimal_sign(value) ? '-' : '+',
-         __s21_read_exponent(value));
+  printf(" * %c1e-%u\n", __s21_is_decimal_negative(value) ? '-' : '+',
+         __s21_get_exponent(value));
 }
 void s21_set_and_print_bit(s21_decimal *const value, const uint32_t bit) {
   printf("\n\nSetting bit %u\n", bit);
@@ -79,7 +79,7 @@ void s21_write_and_print_exponent(s21_decimal *const value,
   s21_print_hex_bin(*value);
 }
 void s21_read_and_print_exponent(const s21_decimal *const value) {
-  printf("Exponent: %u\n", __s21_read_exponent(*value));
+  printf("Exponent: %u\n", __s21_get_exponent(*value));
 }
 
 void s21_shift_left_and_print(s21_decimal *value, const uint32_t amount) {
@@ -96,9 +96,9 @@ void s21_add_and_print(s21_decimal *value, const s21_decimal *other,
                        uint32_t *temp) {
   s21_decimal tarray = {0};
   printf("\n\nAdding\n");
-  s21_print_hex_bin(*other);
-  printf("+\n");
   s21_print_hex_bin(*value);
+  printf("+\n");
+  s21_print_hex_bin(*other);
   printf("=\n");
   *temp = s21_add(*value, *other, &tarray);
   *value = tarray;
@@ -114,9 +114,9 @@ void s21_add_and_print(s21_decimal *value, const s21_decimal *other,
 void s21_mul_and_print(s21_decimal *value, const s21_decimal *other,
                        uint32_t *temp) {
   printf("\n\nMultiplying\n");
-  s21_print_hex_bin(*other);
-  printf("*\n");
   s21_print_hex_bin(*value);
+  printf("*\n");
+  s21_print_hex_bin(*other);
   printf("=\n");
   *temp = s21_mul(*value, *other, value);
   s21_print_hex_bin(*value);
@@ -243,6 +243,12 @@ int main() {
   s21_shift_left_and_print(&(s21_decimal){{1490, 0, 0, 4 | (10 << 27)}}, 47);
   s21_shift_right_and_print(&(s21_decimal){{0, 48824320, 0, 4 | (10 << 27)}},
                             47);
+  s21_add_and_print(&(s21_decimal){{67932, 0, 0, 0x20000}},
+                    &(s21_decimal){{69420, 0, 0, 0x80000000}}, &(uint32_t){0});
+  s21_add_and_print(&(s21_decimal){{67932, 0, 0, 0x20000}},
+                    &(s21_decimal){{69420, 0, 0, 0x80010000}}, &(uint32_t){0});
+  s21_add_and_print(&(s21_decimal){{67932, 0, 0, 0x20000}},
+                    &(s21_decimal){{69420, 0, 0, 0x80040000}}, &(uint32_t){0});
   // 1111111111111111111111111111111000000000000000000000000000000001
   // 1111111111111111111111111111111000000000000000000000000000000001
   //  CLEAR_AND_PRINT_BIT(dec, 127);536 870 913
