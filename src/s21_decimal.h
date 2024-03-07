@@ -25,7 +25,9 @@ typedef struct {
   // };
 } s21_decimal;
 
-static const uint32_t powers_of_ten[29][(S21_DECIMAL_SIZE_IN_INTS - 1) << 1] = {
+#define S21_DOUBLE_MANTISSA_SIZE ((S21_DECIMAL_SIZE_IN_INTS - 1) << 1)
+
+static const uint32_t powers_of_ten[29][S21_DOUBLE_MANTISSA_SIZE] = {
     {
         0x1,
         0x0,
@@ -303,89 +305,117 @@ int s21_negate(s21_decimal value, s21_decimal *result);
 
 #define IABS(a) ((a) > 0 ? (a) : -(a))
 
-S21_STATIC_KEYWORD void __s21_swap(uint32_t *a, uint32_t *b);
+S21_STATIC_KEYWORD void s21_swap(uint32_t *a, uint32_t *b);
 
-S21_STATIC_KEYWORD uint32_t __s21_level_mantissae(
-    s21_decimal *a, s21_decimal *b, uint32_t a_double_mantissa[],
-    uint32_t b_double_mantissa[], uint32_t intfield_size, int16_t *exp_diff);
+S21_STATIC_KEYWORD uint32_t s21_level_mantissae(s21_decimal *a, s21_decimal *b,
+                                                uint32_t a_double_mantissa[],
+                                                uint32_t b_double_mantissa[],
+                                                uint32_t intfield_size,
+                                                int16_t *exp_diff);
 
-S21_STATIC_KEYWORD uint32_t __s21_add_intfield(const uint32_t operand1[],
-                                               const uint32_t operand2[],
-                                               uint32_t result[],
-                                               uint32_t intfield_size);
+S21_STATIC_KEYWORD uint32_t s21_add_intfield(const uint32_t operand1[],
+                                             const uint32_t operand2[],
+                                             uint32_t result[],
+                                             uint32_t intfield_size);
 
-S21_STATIC_KEYWORD int __s21_sub_intfield(const uint32_t operand1[],
-                                          const uint32_t operand2[],
-                                          uint32_t result[],
-                                          uint32_t intfield_size);
+S21_STATIC_KEYWORD int s21_sub_intfield(const uint32_t operand1[],
+                                        const uint32_t operand2[],
+                                        uint32_t result[],
+                                        uint32_t intfield_size);
 
-S21_STATIC_KEYWORD int __s21_mul_intfield(const uint32_t operand1[],
-                                          const uint32_t operand2[],
-                                          uint32_t result[],
-                                          uint32_t intfield_size);
+S21_STATIC_KEYWORD int s21_mul_intfield(const uint32_t operand1[],
+                                        const uint32_t operand2[],
+                                        uint32_t result[],
+                                        uint32_t intfield_size);
 
-S21_STATIC_KEYWORD void __s21_left_shift_intfield(const uint32_t operand[],
+S21_STATIC_KEYWORD void s21_left_shift_intfield(const uint32_t operand[],
+                                                uint32_t shift,
+                                                uint32_t result[],
+                                                uint32_t intfield_size,
+                                                uint32_t *carry);
+
+S21_STATIC_KEYWORD void s21_right_shift_intfield(const uint32_t operand[],
+                                                 uint32_t shift,
+                                                 uint32_t result[],
+                                                 uint32_t intfield_size,
+                                                 uint32_t *carry);
+
+S21_STATIC_KEYWORD void s21_left_rotate_intfield(const uint32_t operand[],
+                                                 uint32_t shift,
+                                                 uint32_t result[],
+                                                 uint32_t intfield_size);
+
+S21_STATIC_KEYWORD void s21_right_rotate_intfield(const uint32_t operand[],
                                                   uint32_t shift,
                                                   uint32_t result[],
                                                   uint32_t intfield_size);
 
-S21_STATIC_KEYWORD void __s21_right_shift_intfield(const uint32_t operand[],
-                                                   uint32_t shift,
+S21_STATIC_KEYWORD void s21_invert_intfield(const uint32_t operand[],
+                                            uint32_t result[],
+                                            uint32_t intfield_size);
+
+S21_STATIC_KEYWORD void s21_2s_complement_intfield(const uint32_t operand[],
                                                    uint32_t result[],
                                                    uint32_t intfield_size);
 
-S21_STATIC_KEYWORD void __s21_negate_intfield(const uint32_t operand[],
-                                              uint32_t result[],
-                                              uint32_t intfield_size);
+S21_STATIC_KEYWORD void s21_div_intfield(uint32_t dividend[],
+                                         uint32_t divisor[], uint32_t result[],
+                                         uint32_t remainder[],
+                                         uint32_t intfield_size);
 
-S21_STATIC_KEYWORD void __s21_2s_complement_intfield(const uint32_t operand[],
-                                                     uint32_t result[],
-                                                     uint32_t intfield_size);
+S21_STATIC_KEYWORD uint8_t
+s21_is_decimal_divisible_by_10(uint32_t value[], uint32_t intfield_size);
 
 S21_STATIC_KEYWORD void *s21_memset(void *data, uint8_t value, uint32_t size);
 
 S21_STATIC_KEYWORD void *s21_memcpy(void *dest, const void *src, uint32_t size);
 
+S21_STATIC_KEYWORD void *s21_memmove(void *dest, const void *src,
+                                     uint32_t size /*in bytes */);
+
 S21_STATIC_KEYWORD int16_t s21_rmemcmp(const void *lhs, const void *rhs,
                                        uint32_t size);
 
-S21_STATIC_KEYWORD uint32_t __s21_read_bits(const uint32_t data[],
-                                            const uint32_t bit_offset,
-                                            const uint32_t bit_count);
+S21_STATIC_KEYWORD uint32_t s21_read_bits(const uint32_t data[],
+                                          const uint32_t bit_offset,
+                                          const uint32_t bit_count);
 
-#define __s21_read_bit(data, bit_offset) __s21_read_bits(data, bit_offset, 1)
+#define s21_read_bit(data, bit_offset) s21_read_bits(data, bit_offset, 1)
 
 // Exponent is the second most significant byte
-#define __s21_get_exponent(decimal) \
+#define s21_get_exponent(decimal) \
   ((decimal).uint_data[S21_DECIMAL_SIZE_IN_INTS - 1] >> 16 & 0xFF)
 
 // Sign is the most significant bit
-#define __s21_is_decimal_negative(decimal) \
+#define s21_is_decimal_negative(decimal) \
   ((decimal).uint_data[S21_DECIMAL_SIZE_IN_INTS - 1] >> 31 & 0x1)
 
-S21_STATIC_KEYWORD void __s21_write_bits(uint32_t data[], const uint32_t value,
-                                         const uint32_t bit_offset,
-                                         const uint32_t bit_count);
+S21_STATIC_KEYWORD void s21_write_bits(uint32_t data[], const uint32_t value,
+                                       const uint32_t bit_offset,
+                                       const uint32_t bit_count);
 
-#define __s21_set_exponent(decimal, value)       \
-  __s21_write_bits((decimal).uint_data, (value), \
-                   S21_DECIMAL_SIZE_IN_BITS - 16, 8)
+#define s21_set_exponent(decimal, value) \
+  s21_write_bits((decimal).uint_data, (value), S21_DECIMAL_SIZE_IN_BITS - 16, 8)
 
-#define __s21_write_bit(data, bit_offset, value) \
-  __s21_write_bits(data, value, bit_offset, 1)
+#define s21_write_bit(data, bit_offset, value) \
+  s21_write_bits(data, value, bit_offset, 1)
 
-#define __s21_write_sign(data, value) \
-  __s21_write_bits(data, value, S21_DECIMAL_SIZE_IN_BITS - 1, 1)
+#define s21_write_sign(decimal, value) \
+  s21_write_bits((decimal).uint_data, value, S21_DECIMAL_SIZE_IN_BITS - 1, 1)
 
-S21_STATIC_KEYWORD int __s21_toggle_bit(uint32_t data[],
-                                        const uint32_t bit_offset);
+S21_STATIC_KEYWORD int s21_toggle_bit(uint32_t data[],
+                                      const uint32_t bit_offset);
 
-S21_STATIC_KEYWORD uint32_t __s21_get_top_bit_pos(const uint32_t data[],
-                                                  uint32_t intfield_size);
+S21_STATIC_KEYWORD uint32_t s21_get_top_bit_pos(const uint32_t data[],
+                                                uint32_t intfield_size);
 
-#define __s21_is_decimal_zero(decimal)                     \
-  !(__s21_get_top_bit_pos((decimal).uint_data,             \
-                          S21_DECIMAL_SIZE_IN_INTS - 1) || \
-    __s21_read_bit((decimal).uint_data, 0))
+#define s21_is_decimal_zero(decimal)                                          \
+  !(s21_get_top_bit_pos((decimal).uint_data, S21_DECIMAL_SIZE_IN_INTS - 1) || \
+    s21_read_bit((decimal).uint_data, 0))
+
+#define DECIMAL_FROM_UINT32(decimal, value)     \
+  (s21_decimal) {                               \
+    .uint_data = { value, 0, 0, 0, 0, 0, 0, 0 } \
+  }
 
 #endif  // S21_DECIMAL_H

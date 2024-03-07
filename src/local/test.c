@@ -30,7 +30,7 @@ void s21_print_bits(uint32_t data[], const uint32_t from,
                     const uint32_t amount) {
   uint32_t i = from + amount - 1;
   while (i < from + amount) {
-    uint32_t bit = __s21_read_bit(data, i);
+    uint32_t bit = s21_read_bit(data, i);
     printf("%s%u\x1B[0m", bit ? "\x1B[32m" : "\x1B[31m", bit);
     if (i == from) break;
     --i;
@@ -52,17 +52,17 @@ void s21_print_hex_bin(const s21_decimal value) {
            i < S21_DECIMAL_SIZE_IN_INTS - 1 ? '\n' : ' ');
   }
   // Print sign and exponent
-  printf(" * %c1e-%u\n", __s21_is_decimal_negative(value) ? '-' : '+',
-         __s21_get_exponent(value));
+  printf(" * %c1e-%u\n", s21_is_decimal_negative(value) ? '-' : '+',
+         s21_get_exponent(value));
 }
 void s21_set_and_print_bit(s21_decimal *const value, const uint32_t bit) {
   printf("\n\nSetting bit %u\n", bit);
-  __s21_write_bits(value->uint_data, 1, bit, 1);
+  s21_write_bits(value->uint_data, 1, bit, 1);
   s21_print_hex_bin(*value);
 }
 void s21_clear_and_print_bit(s21_decimal *const value, const uint32_t bit) {
   printf("\n\nClearing bit %u\n", bit);
-  __s21_write_bits(value->uint_data, 1, bit, 1);
+  s21_write_bits(value->uint_data, 1, bit, 1);
   s21_print_hex_bin(*value);
 }
 // void s21_toggle_and_print_bit(s21_decimal *const value,
@@ -79,17 +79,33 @@ void s21_write_and_print_exponent(s21_decimal *const value,
   s21_print_hex_bin(*value);
 }
 void s21_read_and_print_exponent(const s21_decimal *const value) {
-  printf("Exponent: %u\n", __s21_get_exponent(*value));
+  printf("Exponent: %u\n", s21_get_exponent(*value));
 }
 
 void s21_shift_left_and_print(s21_decimal *value, const uint32_t amount) {
   printf("\n\nShifting left by %u\n", amount);
-  __s21_left_shift_intfield(value->uint_data, amount, value->uint_data, 3);
+  s21_left_shift_intfield(value->uint_data, amount, value->uint_data, 3,
+                          &(uint32_t){0});
   s21_print_hex_bin(*value);
 }
 void s21_shift_right_and_print(s21_decimal *value, const uint32_t amount) {
   printf("Shifting right by %u\n", amount);
-  __s21_right_shift_intfield(value->uint_data, amount, value->uint_data, 3);
+  s21_right_shift_intfield(value->uint_data, amount, value->uint_data, 3,
+                           &(uint32_t){0});
+  s21_print_hex_bin(*value);
+}
+void s21_rotate_left_and_print(s21_decimal *value, const uint32_t amount) {
+  printf("\n\nRotating...\n");
+  s21_print_hex_bin(*value);
+  printf("by %u\n", amount);
+  s21_left_rotate_intfield(value->uint_data, amount, value->uint_data, 3);
+  s21_print_hex_bin(*value);
+}
+void s21_rotate_right_and_print(s21_decimal *value, const uint32_t amount) {
+  printf("\n\nRotating...\n");
+  s21_print_hex_bin(*value);
+  printf("by %u\n", amount);
+  s21_right_rotate_intfield(value->uint_data, amount, value->uint_data, 3);
   s21_print_hex_bin(*value);
 }
 void s21_add_and_print(s21_decimal *value, const s21_decimal *other,
@@ -106,6 +122,25 @@ void s21_add_and_print(s21_decimal *value, const s21_decimal *other,
 
   if (*temp == TOO_BIG)
     printf("Too big!\n");
+  else if (*temp == OK) {
+  } else
+    printf("Unknown\n");
+}
+
+void s21_sub_and_print(s21_decimal *value, const s21_decimal *other,
+                       uint32_t *temp) {
+  s21_decimal tarray = {0};
+  printf("\n\nSubtracting\n");
+  s21_print_hex_bin(*value);
+  printf("-\n");
+  s21_print_hex_bin(*other);
+  printf("=\n");
+  *temp = s21_sub(*value, *other, &tarray);
+  *value = tarray;
+  s21_print_hex_bin(*value);
+
+  if (*temp == TOO_SMALL)
+    printf("Too small!\n");
   else if (*temp == OK) {
   } else
     printf("Unknown\n");
@@ -135,7 +170,7 @@ void s21_write_bits_and_print(s21_decimal *container, const uint32_t from,
   printf("\n\nWriting ");
   s21_print_bits(&data, 0, 32);
   printf(" to bits %u:%u\n", from, from + amount - 1);
-  __s21_write_bits(container->uint_data, data, from, amount);
+  s21_write_bits(container->uint_data, data, from, amount);
   s21_print_hex_bin(*container);
 }
 void s21_compare_and_print(const s21_decimal *value, const s21_decimal *other) {
@@ -164,6 +199,35 @@ void s21_compare_and_print(const s21_decimal *value, const s21_decimal *other) {
     printf("Equal!\n");
   else
     printf("Not equal!\n");
+}
+// void s21_div_and_print(s21_decimal *value, const s21_decimal *other,
+// uint32_t *temp) {
+// s21_decimal tarray = {0};
+// printf("\n\nDividing\n");
+// s21_print_hex_bin(*value);
+// printf("/\n");
+// s21_print_hex_bin(*other);
+// printf("=\n");
+// *temp = s21_div(*value, *other, &tarray);
+// *value = tarray;
+// s21_print_hex_bin(*value);
+//
+// if (*temp == OK) {
+// } else if (*temp == TOO_BIG)
+// printf("Too big!\n");
+// else if (*temp == TOO_SMALL)
+// printf("Too small!\n");
+// else
+// printf("Unknown\n");
+// }
+void s21_div_and_print(s21_decimal *dividend, s21_decimal *divisor) {
+  printf("\n\nDividing\n");
+  s21_print_hex_bin(*dividend);
+  printf("/\n");
+  s21_print_hex_bin(*divisor);
+  printf("=\n");
+  s21_div(*dividend, *divisor, dividend);
+  s21_print_hex_bin(*dividend);
 }
 int main() {
   s21_decimal dec, ced, ded;
@@ -287,8 +351,60 @@ int main() {
   s21_mul_and_print(&(s21_decimal){{7, 0, 0, 0x0}},
                     &(s21_decimal){{0x10000000, 0x3E250261, 0x204FCE5E, 0x0}},
                     &(uint32_t){0});
+  s21_mul_and_print(&(s21_decimal){{~0, ~0, ~0, 0x80000000}},
+                    &(s21_decimal){{~0, ~0, ~0, 0x0}}, &(uint32_t){0});
   s21_mul_and_print(&(s21_decimal){{1, 0, 0, 0x0}},
                     &(s21_decimal){{~0, ~0, ~0, 0x0}}, &(uint32_t){0});
+  s21_add_and_print(&(s21_decimal){{6942, 0, 0, 0x80020000}},
+                    &(s21_decimal){{694200, 0, 0, 0x40000}}, &(uint32_t){0});
+  s21_sub_and_print(&(s21_decimal){{6942, 0, 0, 0x80020000}},
+                    &(s21_decimal){{694200, 0, 0, 0x80040000}}, &(uint32_t){0});
+  s21_sub_and_print(&(s21_decimal){{1488, 0, 0, 0x80020000}},
+                    &(s21_decimal){{694200, 0, 0, 0x80040000}}, &(uint32_t){0});
+  s21_mul_and_print(&(s21_decimal){{5, 0, 0, 0x10000}},
+                    &(s21_decimal){{~0, ~0, ~0, 0x0}}, &(uint32_t){0});
+  s21_mul_and_print(&(s21_decimal){{5, 0, 0, 0x10000}},
+                    &(s21_decimal){{5, 0, 0, 0x0}}, &(uint32_t){0});
+  // s21_div_and_print(&(s21_decimal){{~0, ~0, ~0, 0x0}},
+  // &(s21_decimal){{2, 0, 0, 0x0}}, &(uint32_t){0});
+  // s21_div_and_print(&(s21_decimal){{14880, 0, 0, 0x0}},
+  // &(s21_decimal){{10, 0, 0, 0x0}}, &(uint32_t){0});
+  s21_is_decimal_divisible_by_10((uint32_t[]){622, 0, 0, 0x0}, 3);
+  s21_is_decimal_divisible_by_10((uint32_t[]){620, 0, 0, 0x0}, 3);
+  s21_is_decimal_divisible_by_10((uint32_t[]){~0 - 5, ~0, ~0, 0x0}, 3);
+  s21_is_decimal_divisible_by_10((uint32_t[]){1000000000, 0, 0, 0x0}, 3);
+  s21_rotate_left_and_print(
+      &(s21_decimal){{0x00000000, 0, 0x80000000, 0x00000000}}, 1);
+  s21_rotate_right_and_print(&(s21_decimal){{1, 0, 0, 0x00000000}}, 1);
+  s21_rotate_left_and_print(
+      &(s21_decimal){{0x00000000, 0, 0xB0000000, 0x00000000}}, 2);
+  s21_rotate_right_and_print(&(s21_decimal){{3, 0, 0, 0x00000000}}, 3);
+  s21_sub_and_print(&(s21_decimal){{~0, ~0, ~0, 0x0}},
+                    &(s21_decimal){{~1, ~0, ~0, 0x0}}, &(uint32_t){0});
+  s21_sub_and_print(&(s21_decimal){{0, 0, 0, 0x0}},
+                    &(s21_decimal){{1, 0, 0, 0x0}}, &(uint32_t){0});
+  s21_div_and_print(&(s21_decimal){{14810, 0, 0, 0x0}},
+                    &(s21_decimal){{2, 0, 0, 0x0}});
+  s21_div_and_print(&(s21_decimal){{14820, 0, 0, 0x0}},
+                    &(s21_decimal){{1, 0, 0, 0x0}});
+  s21_div_and_print(&(s21_decimal){{610, 0, 0, 0x0}},
+                    &(s21_decimal){{610, 0, 0, 0x0}});
+  s21_div_and_print(&(s21_decimal){{610, 0, 0, 0x0}},
+                    &(s21_decimal){{10, 0, 0, 0x0}});
+  // subtract unsigned 1 from unsigned 0 and print
+  printf("%u\n", (uint32_t)0 - (uint32_t)1);
+  // uint32_t temptenpow[4] = {0};
+  // for (uint8_t i = 0; i <= S21_MAX_DECIMAL_EXPONENT; ++i) {
+  // printf("10^%u\n{ %u, %u, %u, %u },\n / 10^%u\n...\n", i,
+  // powers_of_ten[i][0], powers_of_ten[i][1], powers_of_ten[i][2],
+  // powers_of_ten[i][3], i - 1);
+  // if (i > 0)
+  // __s21_div_intfield_by_10pow(powers_of_ten[i], temptenpow, i - 1, 4);
+  // printf("{ %u, %u, %u, %u }\n", temptenpow[0], temptenpow[1], temptenpow[2],
+  // temptenpow[3]);
+  // s21_memset(temptenpow, 0, sizeof(temptenpow));
+  // }
+
   // 1111111111111111111111111111111000000000000000000000000000000001
   // 1111111111111111111111111111111000000000000000000000000000000001
   //  CLEAR_AND_PRINT_BIT(dec, 127);536 870 913
