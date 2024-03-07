@@ -309,10 +309,10 @@ S21_STATIC_KEYWORD uint32_t __s21_level_mantissae(
     s21_decimal *a, s21_decimal *b, uint32_t a_double_mantissa[],
     uint32_t b_double_mantissa[], uint32_t intfield_size, int16_t *exp_diff);
 
-S21_STATIC_KEYWORD int __s21_add_intfield(const uint32_t operand1[],
-                                          const uint32_t operand2[],
-                                          uint32_t result[],
-                                          uint32_t intfield_size);
+S21_STATIC_KEYWORD uint32_t __s21_add_intfield(const uint32_t operand1[],
+                                               const uint32_t operand2[],
+                                               uint32_t result[],
+                                               uint32_t intfield_size);
 
 S21_STATIC_KEYWORD int __s21_sub_intfield(const uint32_t operand1[],
                                           const uint32_t operand2[],
