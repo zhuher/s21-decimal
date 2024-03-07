@@ -138,6 +138,33 @@ void s21_write_bits_and_print(s21_decimal *container, const uint32_t from,
   __s21_write_bits(container->uint_data, data, from, amount);
   s21_print_hex_bin(*container);
 }
+void s21_compare_and_print(const s21_decimal *value, const s21_decimal *other) {
+  printf("\n\nComparing\n");
+  s21_print_hex_bin(*value);
+  printf("VS\n");
+  s21_print_hex_bin(*other);
+  printf("..\n");
+  if (s21_is_greater_or_equal(*value, *other))
+    printf("Greater or equal!\n");
+  else
+    printf("Not greater or equal!\n");
+  if (s21_is_less_or_equal(*value, *other))
+    printf("Less or equal!\n");
+  else
+    printf("Not less or equal!\n");
+  if (s21_is_greater(*value, *other))
+    printf("Greater!\n");
+  else
+    printf("Not greater!\n");
+  if (s21_is_less(*value, *other))
+    printf("Less!\n");
+  else
+    printf("Not less!\n");
+  if (s21_is_equal(*value, *other))
+    printf("Equal!\n");
+  else
+    printf("Not equal!\n");
+}
 int main() {
   s21_decimal dec, ced, ded;
 
@@ -249,6 +276,14 @@ int main() {
                     &(s21_decimal){{69420, 0, 0, 0x80010000}}, &(uint32_t){0});
   s21_add_and_print(&(s21_decimal){{67932, 0, 0, 0x20000}},
                     &(s21_decimal){{69420, 0, 0, 0x80040000}}, &(uint32_t){0});
+  s21_compare_and_print(&(s21_decimal){{69420, 0, 0, 0x80050000}},
+                        &(s21_decimal){{6942, 0, 0, 0x80040000}});
+  s21_compare_and_print(&(s21_decimal){{1488, 0, 0, 0x30000}},
+                        &(s21_decimal){{1488001, 0, 0, 0x60000}});
+  s21_compare_and_print(&(s21_decimal){{1489, 0, 0, 0x30000}},
+                        &(s21_decimal){{1488999, 0, 0, 0x60000}});
+  s21_compare_and_print(&(s21_decimal){{1488, 0, 0, 0x30000}},
+                        &(s21_decimal){{1488000, 0, 0, 0x60000}});
   // 1111111111111111111111111111111000000000000000000000000000000001
   // 1111111111111111111111111111111000000000000000000000000000000001
   //  CLEAR_AND_PRINT_BIT(dec, 127);536 870 913

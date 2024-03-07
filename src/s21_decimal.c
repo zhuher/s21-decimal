@@ -44,20 +44,17 @@ int s21_add(s21_decimal v1, s21_decimal v2, s21_decimal *result) {
   //                    : "the same as");
   if (diff_signs)
     if (v_cmp > 0)
-      rval = __s21_sub_intfield(
-          v_cmp > 0 ? v2_double_mantissa : v1_double_mantissa,
-          v_cmp > 0 ? v1_double_mantissa : v2_double_mantissa,
-          res_double_mantissa, double_mantissa_size);
+      rval = __s21_sub_intfield(v2_double_mantissa, v1_double_mantissa,
+                                res_double_mantissa, double_mantissa_size);
     else
-      rval = __s21_sub_intfield(
-          v_cmp > 0 ? v2_double_mantissa : v1_double_mantissa,
-          v_cmp > 0 ? v1_double_mantissa : v2_double_mantissa,
-          res_double_mantissa, double_mantissa_size);
+      rval = __s21_sub_intfield(v1_double_mantissa, v2_double_mantissa,
+                                res_double_mantissa, double_mantissa_size);
+  else if (v_cmp > 0)
+    rval = __s21_add_intfield(v1_double_mantissa, v2_double_mantissa,
+                              res_double_mantissa, double_mantissa_size);
   else
-    rval =
-        __s21_add_intfield(v_cmp > 0 ? v1_double_mantissa : v2_double_mantissa,
-                           v_cmp > 0 ? v2_double_mantissa : v1_double_mantissa,
-                           res_double_mantissa, double_mantissa_size);
+    rval = __s21_add_intfield(v2_double_mantissa, v1_double_mantissa,
+                              res_double_mantissa, double_mantissa_size);
   // printf("v1's exponent %s\x1b[0m v2's exponent\n", exp_diff > 0 ?
   // "\x1b[32m>" : exp_diff < 0 ? "\x1b[31m<" : "\x1b[34m==");
 
@@ -121,11 +118,41 @@ S21_STATIC_KEYWORD int __s21_mul_intfield(const uint32_t operand1[],
 }
 // int s21_div(s21_decimal v1, s21_decimal v2, s21_decimal *result) {}
 //
-// int s21_is_less(s21_decimal v1, s21_decimal v2) {  // TODO
-// }
-// int s21_is_less_or_equal(s21_decimal v1, s21_decimal v2) {}
-// int s21_is_greater(s21_decimal v1, s21_decimal v2) {}
-// int s21_is_greater_or_equal(s21_decimal v1, s21_decimal v2) {}
+int s21_is_less(s21_decimal v1, s21_decimal v2) {  // TODO
+  return s21_is_greater(v2, v1);
+}
+int s21_is_less_or_equal(s21_decimal v1, s21_decimal v2) {
+  return s21_is_less(v1, v2) || s21_is_equal(v1, v2);
+}
+int s21_is_greater(s21_decimal v1, s21_decimal v2) {
+  uint8_t is_v1_zero = __s21_is_decimal_zero(v1),
+          is_v2_zero = __s21_is_decimal_zero(v2);
+  if (is_v1_zero && is_v2_zero) return FALSE;  // are both a zero?..
+  if (is_v1_zero)
+    return __s21_is_decimal_negative(
+        v2);  // ..then, is only v1 a zero?(and therefore greater than a
+              // negative or less than positive non-zero v2)..
+  if (is_v2_zero)
+    return !__s21_is_decimal_negative(
+        v1);  // ..then, is only v2 a zero?(and therefore greater than a
+              // negative or less than positive non-zero v1)..
+  if (__s21_is_decimal_negative(v1) != __s21_is_decimal_negative(v2))
+    return __s21_is_decimal_negative(
+        v2);  // ..then, do signs differ?(and a negative v2 is therefore less
+  // than a positive v1)..
+
+  uint32_t v1_double_mantissa[(S21_DECIMAL_SIZE_IN_INTS - 1) << 1],
+      v2_double_mantissa[(S21_DECIMAL_SIZE_IN_INTS - 1) << 1];
+  s21_memset(v1_double_mantissa, 0, sizeof(v1_double_mantissa));
+  s21_memset(v2_double_mantissa, 0, sizeof(v2_double_mantissa));
+  __s21_level_mantissae(&v1, &v2, v1_double_mantissa, v2_double_mantissa,
+                        S21_DECIMAL_SIZE_IN_INTS - 1, &(int16_t){0});
+  return s21_rmemcmp(v1_double_mantissa, v2_double_mantissa,
+                     sizeof(v1_double_mantissa)) > 0;
+}
+int s21_is_greater_or_equal(s21_decimal v1, s21_decimal v2) {
+  return s21_is_greater(v1, v2) || s21_is_equal(v1, v2);
+}
 int s21_is_equal(s21_decimal v1, s21_decimal v2) {
   uint8_t is_v1_zero = __s21_is_decimal_zero(v1),
           is_v2_zero = __s21_is_decimal_zero(v2);
@@ -135,17 +162,17 @@ int s21_is_equal(s21_decimal v1, s21_decimal v2) {
     return FALSE;  // ..then, do signs differ?..
   // ..then...
   uint32_t v1_double_mantissa[(S21_DECIMAL_SIZE_IN_INTS - 1) << 1],
-      v2_double_mantissa[(S21_DECIMAL_SIZE_IN_INTS - 1) << 1]
-      /*,  cmp = 0*/
-      ;
+      v2_double_mantissa[(S21_DECIMAL_SIZE_IN_INTS - 1) << 1];
   s21_memset(v1_double_mantissa, 0, sizeof(v1_double_mantissa));
   s21_memset(v2_double_mantissa, 0, sizeof(v2_double_mantissa));
   __s21_level_mantissae(&v1, &v2, v1_double_mantissa, v2_double_mantissa,
                         S21_DECIMAL_SIZE_IN_INTS - 1, &(int16_t){0});
   return s21_rmemcmp(v1_double_mantissa, v2_double_mantissa,
-                     sizeof(v1_double_mantissa));
+                     sizeof(v1_double_mantissa)) == 0;
 }
-// int s21_is_not_equal(s21_decimal v1, s21_decimal v2) {}
+int s21_is_not_equal(s21_decimal v1, s21_decimal v2) {
+  return !s21_is_equal(v1, v2);
+}
 //
 // int s21_from_int_to_decimal(int src, s21_decimal *dst) {}
 // int s21_from_float_to_decimal(float src, s21_decimal *dst) {}
@@ -237,14 +264,15 @@ S21_STATIC_KEYWORD int16_t s21_rmemcmp(const void *lhs, const void *rhs,
                                        uint32_t size /*in bytes */) {
   int answ = 0;
   --size;
-  while (!answ) {
-    // printf("lhs[%d] = %d, rhs[%d] = %d\n", size, ((uint8_t *)lhs)[size],
+  // while (!answ) {
+  do {
+    // printf("lhs[%d] = %d VS rhs[%d] = %d\n", size, ((uint8_t *)lhs)[size],
     // size,
     // ((uint8_t *)rhs)[size]);
     answ = ((uint8_t *)lhs)[size] - ((uint8_t *)rhs)[size];
-    if (size == 0) break;
-    --size;
-  }
+    // if (size == 0) break;
+    // --size;
+  } while (!answ && size--);
   return answ;
 }
 
