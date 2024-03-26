@@ -5,7 +5,10 @@ flake.nix
 flake.lock
 
 # Miscellaneous files
-# src/local/
+zhukotest/
+
+#VS Code
+.vscode/
 
 # Prerequisites
 *.d

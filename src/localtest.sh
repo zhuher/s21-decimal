@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+gcc -Wall -Wextra -Werror -Wpedantic -Wshift-count-overflow -o local/privet s21_decimal.c local/test.c -I. -DS21_DECIMAL_TEST && hyperfine ./local/privet --runs 1 --show-output && rm -f local/privet
