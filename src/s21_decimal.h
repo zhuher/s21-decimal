@@ -20,9 +20,7 @@
  * 16 unused bits, other words contain mantissa
  */
 typedef struct {
-  // union {
   uint32_t bits[S21_DECIMAL_SIZE_IN_INTS];
-  // };
 } s21_decimal;
 
 #define S21_NULL ((void *)0)
@@ -332,7 +330,6 @@ S21_STATIC_KEYWORD int s21_mul_intfield(const uint32_t operand1[],
                                         const uint32_t operand2[],
                                         uint32_t result[],
                                         uint32_t intfield_size);
-void s21_normalize(s21_decimal *dc);
 
 S21_STATIC_KEYWORD void s21_left_shift_intfield(const uint32_t operand[],
                                                 uint32_t shift,
@@ -432,10 +429,6 @@ void s21_read_bits_and_print(const uint32_t value[], const uint32_t from,
 
 void s21_print_hex_bin(const uint32_t value[], uint32_t intfield_size,
                        uint32_t exponent, uint8_t flags);
-
-void s21_fill_long(s21_decimal value_1, s21_decimal value_2, uint32_t *value);
-
-void s21_bank_round_long(uint32_t dc[], uint32_t intfield_size);
 
 void s21_shrink(uint32_t data[], uint32_t intfield_size, int16_t *exponent);
 

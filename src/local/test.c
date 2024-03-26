@@ -60,34 +60,6 @@ void s21_shift_right_and_print(s21_decimal *value, const uint32_t amount,
       s21_get_exponent(*value) | (s21_is_decimal_negative(*value) << 15),
       flags);
 }
-void s21_rotate_left_and_print(s21_decimal *value, const uint32_t amount,
-                               S21_FLAGS flags) {
-  printf("\n\nRotating...\n");
-  s21_print_hex_bin(
-      value->bits, S21_DECIMAL_SIZE_IN_INTS,
-      s21_get_exponent(*value) | (s21_is_decimal_negative(*value) << 15),
-      flags);
-  printf("by %u\n", amount);
-  s21_left_rotate_intfield(value->bits, amount, value->bits, 3);
-  s21_print_hex_bin(
-      value->bits, S21_DECIMAL_SIZE_IN_INTS,
-      s21_get_exponent(*value) | (s21_is_decimal_negative(*value) << 15),
-      flags);
-}
-void s21_rotate_right_and_print(s21_decimal *value, const uint32_t amount,
-                                S21_FLAGS flags) {
-  printf("\n\nRotating...\n");
-  s21_print_hex_bin(
-      value->bits, S21_DECIMAL_SIZE_IN_INTS,
-      s21_get_exponent(*value) | (s21_is_decimal_negative(*value) << 15),
-      flags);
-  printf("by %u\n", amount);
-  s21_right_rotate_intfield(value->bits, amount, value->bits, 3);
-  s21_print_hex_bin(
-      value->bits, S21_DECIMAL_SIZE_IN_INTS,
-      s21_get_exponent(*value) | (s21_is_decimal_negative(*value) << 15),
-      flags);
-}
 void s21_add_and_print(s21_decimal *value, const s21_decimal *other,
                        uint32_t *temp, S21_FLAGS flags) {
   s21_decimal tarray = {0};
@@ -101,7 +73,7 @@ void s21_add_and_print(s21_decimal *value, const s21_decimal *other,
       other->bits, S21_DECIMAL_SIZE_IN_INTS,
       s21_get_exponent(*other) | (s21_is_decimal_negative(*other) << 15),
       flags);
-  printf("=");
+  printf("=\n");
   *temp = s21_add(*value, *other, &tarray);
   *value = tarray;
   s21_print_hex_bin(
@@ -112,7 +84,9 @@ void s21_add_and_print(s21_decimal *value, const s21_decimal *other,
   if (*temp == TOO_BIG)
     printf("Too big!\n");
   else if (*temp == OK) {
-  } else
+  } else if (*temp == TOO_SMALL)
+    printf("Too small!\n");
+  else
     printf("Unknown\n");
 }
 
@@ -129,7 +103,7 @@ void s21_sub_and_print(s21_decimal *value, const s21_decimal *other,
       other->bits, S21_DECIMAL_SIZE_IN_INTS,
       s21_get_exponent(*other) | (s21_is_decimal_negative(*other) << 15),
       flags);
-  printf("=");
+  printf("=\n");
   *temp = s21_sub(*value, *other, &tarray);
   *value = tarray;
   s21_print_hex_bin(
@@ -156,7 +130,7 @@ void s21_mul_and_print(s21_decimal *value, const s21_decimal *other,
       other->bits, S21_DECIMAL_SIZE_IN_INTS,
       s21_get_exponent(*other) | (s21_is_decimal_negative(*other) << 15),
       flags);
-  printf("=");
+  printf("=\n");
   *temp = s21_mul(*value, *other, value);
   s21_print_hex_bin(
       value->bits, S21_DECIMAL_SIZE_IN_INTS,
@@ -556,6 +530,64 @@ int main() {
   s21_add_and_print(&(s21_decimal){{1000000009, 0, 0, 0xD0000}},
                     &(s21_decimal){{999999991, 0, 0, 0xD0000}}, &(uint32_t){0},
                     PRINT_DEC_SERVICE);
+  s21_add_and_print(
+      &(s21_decimal){{0xffffffff, 0xffffffff, 0xffffffff, 0x00000000}},
+      &(s21_decimal){{0x00000001, 0x00000000, 0x00000000, 0x00000000}},
+      &(uint32_t){0}, PRINT_DEC_SERVICE);
+  // s21_add_and_print(&(s21_decimal){{7, 0, 0, 0x00000000}},
+  //                   &(s21_decimal){{2, 0x00000000, 0x00000000, 0x00000000}},
+  //                   &(uint32_t){0}, PRINT_BIN_DEC_SERVICE);
+  // s21_add_and_print(
+  //     &(s21_decimal){{0x35555555, 0xcf2607ee, 0x6bb4afe4, 0x001b0000}},
+  //     &(s21_decimal){{0x00000001, 0x00000000, 0x00000000, 0x001c0000}},
+  //     &(uint32_t){0}, PRINT_ALL_SERVICE);
+  // s21_add_and_print(&(s21_decimal){{0xA, 0, 0, 0x00000000}},
+  //                   &(s21_decimal){{0xA, 0x00000000, 0x00000000,
+  //                   0x80000000}},
+  //                   &(uint32_t){0}, PRINT_ALL_SERVICE);
+  // s21_add_and_print(
+  //     &(s21_decimal){{0xffffffff, 0xffffffff, 0x00000000, 0x001c0000}},
+  //     &(s21_decimal){{0xffffffff, 0xffffffff, 0x00000000, 0x801c0000}},
+  //     &(uint32_t){0}, PRINT_ALL_SERVICE);
+  // s21_add_and_print(
+  //     &(s21_decimal){{0x0, 0x0, 0x00000000, 0x00000000}},
+  //     &(s21_decimal){{0xffffffff, 0xffffffff, 0x00000000, 0x801c0000}},
+  //     &(uint32_t){0}, PRINT_ALL_SERVICE);
+  // s21_add_and_print(
+  //     &(s21_decimal){{0xffffffff, 0xffffffff, 0x00000000, 0x801c0000}},
+  //     &(s21_decimal){{0xffffffff, 0xffffffff, 0x00000000, 0x801c0000}},
+  //     &(uint32_t){0}, PRINT_ALL_SERVICE);
+  s21_mul_and_print(
+      &(s21_decimal){{0xffffffff, 0xffffffff, 0x00000000, 0x001c0000}},
+      &(s21_decimal){{0x64, 0x0, 0x00000000, 0x00000000}}, &(uint32_t){0},
+      PRINT_ALL_SERVICE);
+  s21_add_and_print(&(s21_decimal){{0xffffffff, 0xffffffff, 0, 0x001A0000}},
+                    &(s21_decimal){{0xffffffff, 0xffffffff, 0, 0x801C0000}},
+                    &(uint32_t){0}, PRINT_DEC_SERVICE);
+  s21_add_and_print(
+      &(s21_decimal){{0x0000000A, 0x00000000, 0x00000000, 0x00000000}},
+      &(s21_decimal){{~0, ~0, ~0, 0x80000000}}, &(uint32_t){0},
+      PRINT_DEC_SERVICE);
+  s21_add_and_print(
+      &(s21_decimal){{0xffffffff, 0xffffffff, 0x204fce57, 0x001c0000}},
+      &(s21_decimal){{0xffffffff, 0xffffffff, 0xefffffff, 0x00000000}},
+      &(uint32_t){0}, PRINT_ALL_SERVICE);
+  s21_mul_and_print(
+      &(s21_decimal){{0xffffffff, 0xffffffff, 0x0bffffff, 0x001c0000}},
+      &(s21_decimal){{0xffffffff, 0xffffffff, 0x13ffffff, 0x001c0000}},
+      &(uint32_t){0}, PRINT_ALL_SERVICE);
+  s21_div_and_print(
+      &(s21_decimal){{0x6aaaaaab, 0x9e4c0fdc, 0xd7695fc9, 0x00000000}},
+      &(s21_decimal){{0x00000002, 0x00000000, 0x00000000, 0x00000000}},
+      PRINT_ALL_SERVICE);
+  s21_div_and_print(
+      &(s21_decimal){{0x00000000, 0x00000005, 0x00000000, 0x00000000}},
+      &(s21_decimal){{0x00000003, 0x00000000, 0x00000000, 0x00000000}},
+      PRINT_ALL_SERVICE);
+  s21_div_and_print(
+      &(s21_decimal){{0x00000000, 0x00000005, 0x00000000, 0x80010000}},
+      &(s21_decimal){{0x00000003, 0x00000000, 0x00000000, 0x00000000}},
+      PRINT_ALL_SERVICE);
   // 11100011100011101010100011101101001100010100111111
   // 3817777389 50495
   // 4238552517 94663
