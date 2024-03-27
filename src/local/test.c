@@ -192,6 +192,12 @@ void s21_compare_and_print(const s21_decimal *value, const s21_decimal *other,
   else
     printf("Not equal!\n");
 }
+void s21_convert_str_to_decimal(const char str[], S21_FLAGS flags) {
+  s21_decimal value = s21_atod(str);
+  s21_print_hex_bin(
+      value.bits, S21_DECIMAL_SIZE_IN_INTS,
+      s21_get_exponent(value) | (s21_is_decimal_negative(value) << 15), flags);
+}
 // void s21_div_and_print(s21_decimal *value, const s21_decimal *other,
 // uint32_t *temp) {
 // s21_decimal tarray = {0};
@@ -402,6 +408,9 @@ int main() {
   s21_mul_and_print(&(s21_decimal){{5, 0, 0, 0x10000}},
                     &(s21_decimal){{5, 0, 0, 0x0}}, &(uint32_t){0},
                     PRINT_DEC_SERVICE);
+  s21_mul_and_print(&(s21_decimal){{1, 0, 0, 0x1c0000}},
+                    &(s21_decimal){{~0, ~0, ~0, 0x0}}, &(uint32_t){0},
+                    PRINT_DEC_SERVICE);
   // s21_div_and_print(&(s21_decimal){{~0, ~0, ~0, 0x0}},
   // &(s21_decimal){{2, 0, 0, 0x0}}, &(uint32_t){0});
   // s21_div_and_print(&(s21_decimal){{14880, 0, 0, 0x0}},
@@ -588,6 +597,37 @@ int main() {
       &(s21_decimal){{0x00000000, 0x00000005, 0x00000000, 0x80010000}},
       &(s21_decimal){{0x00000003, 0x00000000, 0x00000000, 0x00000000}},
       PRINT_ALL_SERVICE);
+  s21_mul_and_print(&(s21_decimal){{1, 0, 0, 0x1c0000}},
+                    &(s21_decimal){{~0, ~0, ~0, 0x0}}, &(uint32_t){0},
+                    PRINT_DEC_SERVICE);
+  s21_convert_str_to_decimal("7.9228162514264337593543950321",
+                             PRINT_ALL_SERVICE);
+  s21_decimal d3 = s21_atod("7.9228162514264337593543950321");
+  s21_decimal d4 = s21_atod("79228162514264337593543950335");
+  s21_div_and_print(&d3, &d4, PRINT_ALL_SERVICE);
+  d3 = s21_atod("0.4");
+  d4 = s21_atod("0.07");
+  s21_div_and_print(&d3, &d4, PRINT_ALL_SERVICE);
+  d3 = s21_atod("3");
+  d4 = s21_atod("1.5");
+  s21_div_and_print(&d3, &d4, PRINT_ALL_SERVICE);
+  d3 = s21_atod("-79228162514264337593543950335");
+  d4 = s21_atod("10000000000000000000000000000");
+  s21_div_and_print(&d3, &d4, PRINT_ALL_SERVICE);
+  float f = -0;
+  union {
+    float f;
+    uint32_t i;
+  } u = {.f = f};
+  printf("%f\n", f);
+  printf("f's exponent: %d\n", -(0x7F - (u.i >> 23 & 0xFF)));
+  s21_print_hex_bin((uint32_t *)&f, 1, 0, PRINT_BIN);
+  printf("\n");
+  s21_print_hex_bin(&u.i, 1, 0, PRINT_BIN);
+  // s21_div_and_print(
+  //     &(s21_decimal){{0x00000004, 0x00000000, 0x00000000, 0x80010000}},
+  //     &(s21_decimal){{0x00000005, 0x00000000, 0x00000000, 0x00010000}},
+  //     PRINT_ALL_SERVICE);
   // 11100011100011101010100011101101001100010100111111
   // 3817777389 50495
   // 4238552517 94663

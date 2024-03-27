@@ -276,6 +276,7 @@ static const uint32_t powers_of_ten[29][S21_DOUBLE_MANTISSA_SIZE] = {
 #define CONVERT_ERROR 1
 #define CALC_ERROR 1
 #define UINT_MAX (1llu << 32llu)
+#define S21_MAXIMUM_FLOAT 79228162514264337593543950335.0F
 
 // TASK FUNCTIONS
 int s21_add(s21_decimal v1, s21_decimal v2, s21_decimal *result);
@@ -386,6 +387,8 @@ S21_STATIC_KEYWORD uint32_t s21_read_bits(const uint32_t data[],
 
 S21_STATIC_KEYWORD uint8_t *s21_dtoa(const uint32_t data[], uint32_t exponent,
                                      uint32_t intfield_size, uint8_t *str);
+
+S21_STATIC_KEYWORD s21_decimal s21_atod(const char *str);
 
 #define s21_read_bit(data, bit_offset) s21_read_bits(data, bit_offset, 1)
 
