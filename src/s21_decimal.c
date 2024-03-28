@@ -1,5 +1,6 @@
 #include "s21_decimal.h"
 
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -268,19 +269,23 @@ int s21_from_int_to_decimal(int src, s21_decimal *dst) {
   dst->bits[0] = (uint32_t)(src > 0 ? src : -src);
   return OK;
 }
-// int s21_from_float_to_decimal(float src, s21_decimal *dst) {
-//   s21_memset(dst, 0, sizeof(dst->bits));
-//   union {
-//     float f;
-//     uint32_t i;
-//   } u = {src};
-//   // check if float is nan or inf
-
-//   s21_size_t len = snprintf(S21_NULL, 0, "%f", 200);
-//   char str[len];
-//   snprintf(str, len, "%f", src);
-//   *dst = s21_atod(str);
-// }
+int s21_from_float_to_decimal(float src, s21_decimal *dst) {
+  s21_memset(dst, 0, sizeof(dst->bits));
+  if (isinf(src) || isnan(src) || fabsf(src) > S21_MAXIMUM_FLOAT ||
+      (fabsf(src) > 0 && fabsf(src) < S21_MINIMUM_FLOAT))
+    return CONVERT_ERROR;
+  int sign = ((src < 0) ? 1 : 0);
+  src = fabsf(src);
+  int tmp = (int)src, exp = 0;
+  while (src - ((float)tmp / (powf(10, (float)exp))) != 0) {
+    ++exp;
+    tmp = (int)(src * (powf(10, (float)exp)));
+  }
+  s21_from_int_to_decimal(tmp, dst);
+  s21_set_exponent(*dst, exp);
+  s21_write_sign(*dst, sign);
+  return OK;
+}
 // int s21_from_decimal_to_int(s21_decimal src, int *dst) {}
 // int s21_from_decimal_to_float(s21_decimal src, float *dst) {}
 //
