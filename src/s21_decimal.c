@@ -107,10 +107,10 @@ S21_STATIC_KEYWORD int s21_mul_intfield(const uint32_t operand1[],
                                         const uint32_t operand2[],
                                         uint32_t result[],
                                         uint32_t intfield_size) {
-  uint32_t product[intfield_size << 1], carry = 0;
+  uint32_t product[intfield_size << 1];
   memset(product, 0, sizeof(product));
   for (uint32_t i = 0; i < intfield_size; ++i) {
-    carry = 0;
+    uint32_t carry = 0;
     for (uint32_t j = 0; j < intfield_size; ++j) {
       uint64_t temp =
           (uint64_t)operand1[j] * operand2[i] + product[i + j] + carry;
@@ -234,7 +234,7 @@ int s21_is_greater(s21_decimal v1, s21_decimal v2) {
 
   return s21_rmemcmp(v1_double_mantissa, v2_double_mantissa,
                      sizeof(v1_double_mantissa)) > 0;
-  return s21_rmemcmp(v1.bits, v2.bits, S21_DECIMAL_SIZE_IN_INTS - 1) > 0;
+  // return s21_rmemcmp(v1.bits, v2.bits, S21_DECIMAL_SIZE_IN_INTS - 1) > 0;
 }
 int s21_is_greater_or_equal(s21_decimal v1, s21_decimal v2) {
   return s21_is_greater(v1, v2) || s21_is_equal(v1, v2);
@@ -480,10 +480,9 @@ uint32_t s21_read_bits(const uint32_t value[], const uint32_t bit_offset,
 S21_STATIC_KEYWORD void s21_write_bits(uint32_t data[], const uint32_t value,
                                        const uint32_t absolute_offset,
                                        const uint32_t bit_count) {
-  uint32_t unit = absolute_offset / 32, offset_in_unit = absolute_offset % 32,
-           shifted_mask;
+  uint32_t unit = absolute_offset / 32, offset_in_unit = absolute_offset % 32;
   if (offset_in_unit >> 5 == (offset_in_unit + bit_count - 1) >> 5) {
-    shifted_mask = (((1 << bit_count) - 1) << offset_in_unit);
+    uint32_t shifted_mask = (((1 << bit_count) - 1) << offset_in_unit);
     data[unit] &= bit_count == 32 ? 0 : ~shifted_mask;
     data[unit] |= ((bit_count == 32 ? ~(uint32_t)(0) : shifted_mask) &
                    (value << offset_in_unit));
