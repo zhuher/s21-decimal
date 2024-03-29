@@ -20,7 +20,8 @@ typedef struct {
 
 typedef unsigned long s21_size_t;
 
-#define S21_DOUBLE_MANTISSA_SIZE ((S21_DECIMAL_SIZE_IN_INTS - 1) << 1)
+#define S21_MANTISSA_SIZE (S21_DECIMAL_SIZE_IN_INTS - 1)
+#define S21_DOUBLE_MANTISSA_SIZE (S21_MANTISSA_SIZE << 1)
 
 static const uint32_t powers_of_ten[29][S21_DOUBLE_MANTISSA_SIZE] = {
     {
@@ -319,7 +320,7 @@ void s21_left_shift_intfield(const uint32_t operand[], uint32_t shift,
                              uint32_t result[], uint32_t intfield_size,
                              uint32_t *carry);
 
-void s21_div_intfield(const uint32_t dividend[], const uint32_t divisor[],
+void s21_div_bitfield(const uint32_t dividend[], const uint32_t divisor[],
                       uint32_t result[], uint32_t remainder[],
                       uint32_t intfield_size);
 
