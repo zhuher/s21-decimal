@@ -12,18 +12,17 @@ int s21_add(s21_decimal v1, s21_decimal v2, s21_decimal *result) {
   uint32_t v1_double_mantissa[S21_DOUBLE_MANTISSA_SIZE] = {0},
            v2_double_mantissa[S21_DOUBLE_MANTISSA_SIZE] = {0},
            res_double_mantissa[S21_DOUBLE_MANTISSA_SIZE] = {0}, rval = OK;
+  // s21_memset(v1_double_mantissa, 0, sizeof(v1_double_mantissa));
+  // s21_memset(v2_double_mantissa, 0, sizeof(v2_double_mantissa));
+  // s21_memset(res_double_mantissa, 0, sizeof(res_double_mantissa));
   int16_t v1_exp = s21_get_exponent(v1), v2_exp = s21_get_exponent(v2);
   s21_shrink(v1.bits, S21_DOUBLE_MANTISSA_SIZE >> 1, &v1_exp);
   s21_shrink(v2.bits, S21_DOUBLE_MANTISSA_SIZE >> 1, &v2_exp);
   s21_set_exponent(v1, v1_exp);
   s21_set_exponent(v2, v2_exp);
-  int16_t exp_diff, v_cmp,
-      max_exp = MAX(s21_get_exponent(v1), s21_get_exponent(v2));
+  int16_t exp_diff, v_cmp, max_exp = MAX(v1_exp, v2_exp);
   uint8_t diff_signs =
       (s21_is_decimal_negative(v1) != s21_is_decimal_negative(v2));
-  s21_memset(v1_double_mantissa, 0, sizeof(v1_double_mantissa));
-  s21_memset(v2_double_mantissa, 0, sizeof(v2_double_mantissa));
-  s21_memset(res_double_mantissa, 0, sizeof(res_double_mantissa));
   s21_level_mantissae(&v1, &v2, v1_double_mantissa, v2_double_mantissa,
                       S21_DOUBLE_MANTISSA_SIZE >> 1, &exp_diff);
   v_cmp = s21_rmemcmp(v1_double_mantissa, v2_double_mantissa,
@@ -286,9 +285,30 @@ int s21_from_float_to_decimal(float src, s21_decimal *dst) {
   s21_write_sign(*dst, sign);
   return OK;
 }
-// int s21_from_decimal_to_int(s21_decimal src, int *dst) {}
-// int s21_from_decimal_to_float(s21_decimal src, float *dst) {}
-//
+int s21_from_decimal_to_int(s21_decimal src, int *dst) {
+  s21_div_intfield(src.bits, powers_of_ten[s21_get_exponent(src)], src.bits,
+                   NULL, S21_DOUBLE_MANTISSA_SIZE >> 1);
+  if (src.bits[2] || src.bits[1] || src.bits[0] > INT32_MAX)
+    return CONVERT_ERROR;
+  union {
+    uint32_t sval;
+    int32_t uval;
+  } u = {
+      .sval = src.bits[0],
+  };
+  *dst = u.uval;
+  if (s21_is_decimal_negative(src)) *dst = -*dst;
+  return OK;
+}
+int s21_from_decimal_to_float(s21_decimal src, float *dst) {
+  char str[200] = {0};
+  s21_dtoa(src.bits, s21_get_exponent(src), S21_DOUBLE_MANTISSA_SIZE >> 1,
+           (uint8_t *)str);
+  *dst = sscanf(str, "%f", dst) == 1 ? *dst : 0;
+  if (s21_is_decimal_negative(src)) *dst = -*dst;
+  return OK;
+}
+
 // int s21_floor(s21_decimal value, s21_decimal *result) {}
 // int s21_round(s21_decimal value, s21_decimal *result) {}
 // int s21_truncate(s21_decimal value, s21_decimal *result) {}
