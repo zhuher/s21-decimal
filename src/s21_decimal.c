@@ -258,6 +258,7 @@ int s21_from_decimal_to_int(s21_decimal src, int *dst) {
       .sval = src.bits[0],
   };
   *dst = u.uval;
+  (void)u.sval;
   if (s21_is_decimal_negative(src)) *dst = -*dst;
   return OK;
 }
