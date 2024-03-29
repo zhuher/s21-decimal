@@ -277,7 +277,7 @@ static const uint32_t powers_of_ten[29][S21_DOUBLE_MANTISSA_SIZE] = {
 #define CALC_ERROR 1
 #define UINT_MAX (1llu << 32llu)
 #define S21_MAXIMUM_FLOAT 79228162514264337593543950335.0F
-#define S21_MINIMUM_FLOAT 1e-28F
+#define S21_SMALLEST_FLOAT 1e-28F
 
 // TASK FUNCTIONS
 int s21_add(s21_decimal v1, s21_decimal v2, s21_decimal *result);
