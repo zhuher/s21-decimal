@@ -538,28 +538,6 @@ S21_STATIC_KEYWORD uint8_t *s21_dtoa(const uint32_t data[], uint32_t exponent,
   s21_reverse_str(str, idx);
   return str;
 }
-S21_STATIC_KEYWORD s21_decimal s21_atod(const char *str) {
-  s21_size_t len = strnlen(str, 200);
-  s21_decimal accumulator = {0};
-  uint32_t idx = 0, layer[S21_DOUBLE_MANTISSA_SIZE >> 1];
-  memset(layer, 0, sizeof(layer));
-  if (len && str[0] == '-') {
-    s21_write_sign(accumulator, TRUE);
-    ++idx;
-  }
-  for (; idx < len; ++idx) {
-    if (str[idx] == '.') {
-      s21_set_exponent(accumulator, len - idx - 1);
-      continue;
-    }
-    layer[0] = str[idx] - '0';
-    s21_mul_intfield(accumulator.bits, powers_of_ten[1], accumulator.bits,
-                     S21_DOUBLE_MANTISSA_SIZE >> 1);
-    s21_add_intfield(accumulator.bits, layer, accumulator.bits,
-                     S21_DOUBLE_MANTISSA_SIZE >> 1);
-  }
-  return accumulator;
-}
 
 S21_STATIC_KEYWORD uint8_t s21_is_intfield_zero(const uint32_t intfield[],
                                                 uint32_t intfield_size) {
@@ -569,59 +547,6 @@ S21_STATIC_KEYWORD uint8_t s21_is_intfield_zero(const uint32_t intfield[],
     }
   }
   return TRUE;
-}
-
-int len_of_int(uint32_t value) {
-  if (value >= 1000000000) return 10;
-  if (value >= 100000000) return 9;
-  if (value >= 10000000) return 8;
-  if (value >= 1000000) return 7;
-  if (value >= 100000) return 6;
-  if (value >= 10000) return 5;
-  if (value >= 1000) return 4;
-  if (value >= 100) return 3;
-  if (value >= 10) return 2;
-  return 1;
-}
-
-void s21_print_bits(const uint32_t data[], const uint32_t from,
-                    const uint32_t amount) {
-  uint32_t i = from + amount - 1;
-  while (i < from + amount) {
-    uint32_t bit = s21_read_bit(data, i);
-    printf("%s%u\x1B[0m", bit ? "\x1B[32m" : "\x1B[31m", bit);
-    if (i == from) break;
-    --i;
-  }
-}
-
-void s21_read_bits_and_print(const uint32_t value[], const uint32_t from,
-                             const uint32_t amount) {
-  uint32_t width = len_of_int(S21_DECIMAL_SIZE_IN_BITS);
-  printf("Bits %*u to %*u: ", width, from, width, from + amount - 1);
-  s21_print_bits(value, from, amount);
-}
-
-void s21_print_hex_bin(const uint32_t value[], uint32_t intfield_size,
-                       uint32_t exponent, uint8_t flags) {
-  if (flags & PRINT_DEC) {
-    uint8_t decstr[200] = {0};
-    printf("%s\n",
-           s21_dtoa(value, exponent,
-                    intfield_size - (flags & ACCOUNT_FOR_SERVICE), decstr));
-  }
-  for (uint32_t i = 0;
-       i < intfield_size && ((flags & PRINT_BIN) || (flags & PRINT_HEX)); ++i) {
-    if (flags & PRINT_BIN) s21_read_bits_and_print(value, i * 32, 32);
-    if (flags & PRINT_HEX)
-      printf("%s%08X %-10u ", (flags & PRINT_BIN) ? " " : "", value[i],
-             value[i]);
-    printf("%s", i < intfield_size - 1 && (flags & PRINT_ALL) ? "\n" : "");
-  }
-  // Print sign and exponent
-  if (flags & PRINT_BIN_HEX && flags & ACCOUNT_FOR_SERVICE)
-    printf(" * %c1e-%u\n", (value[intfield_size - 1] >> 31) & 1 ? '-' : '+',
-           exponent & 0xFF);
 }
 void s21_shrink(uint32_t data[], uint32_t intfield_size, int16_t *exponent) {
   uint32_t rem[intfield_size];
