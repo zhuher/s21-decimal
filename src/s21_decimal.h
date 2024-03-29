@@ -273,10 +273,10 @@ static const uint32_t powers_of_ten[29][S21_DOUBLE_MANTISSA_SIZE] = {
 #define S21_SMALLEST_FLOAT 1e-28F
 
 // TASK FUNCTIONS
-int s21_add(s21_decimal v1, s21_decimal v2, s21_decimal *result);
-int s21_sub(s21_decimal v1, s21_decimal v2, s21_decimal *result);
-int s21_mul(s21_decimal v1, s21_decimal v2, s21_decimal *result);
-int s21_div(s21_decimal v1, s21_decimal v2, s21_decimal *result);
+int s21_add(s21_decimal value_1, s21_decimal value_2, s21_decimal *result);
+int s21_sub(s21_decimal value_1, s21_decimal value_2, s21_decimal *result);
+int s21_mul(s21_decimal value_1, s21_decimal value_2, s21_decimal *result);
+int s21_div(s21_decimal value_1, s21_decimal value_2, s21_decimal *result);
 
 int s21_is_less(s21_decimal v1, s21_decimal v2);
 int s21_is_less_or_equal(s21_decimal v1, s21_decimal v2);
