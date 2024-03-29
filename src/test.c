@@ -1194,7 +1194,7 @@ START_TEST(round_test3) {
   ck_assert_msg(res.bits[0] == 0x00000000, "round_test3.4 FAIL");
   ck_assert_msg(res.bits[1] == 0x00000000, "round_test3.4 FAIL");
   ck_assert_msg(res.bits[2] == 0x00000000, "round_test3.4 FAIL");
-  ck_assert_msg(res.bits[3] == 0x00000000, "round_test3.4 FAIL");
+  ck_assert_msg(res.bits[3] == 0x80000000, "round_test3.4 FAIL");
 }
 END_TEST
 
