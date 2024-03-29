@@ -363,4 +363,37 @@ uint8_t s21_is_intfield_zero(const uint32_t intfield[], uint32_t intfield_size);
 
 void s21_shrink(uint32_t data[], uint32_t intfield_size, int16_t *exponent);
 
+uint8_t s21_is_decimal_valid(s21_decimal value);
+
+typedef enum {
+  ACCOUNT_FOR_SERVICE = 1,
+  PRINT_BIN = 2,
+  PRINT_BIN_SERVICE = ACCOUNT_FOR_SERVICE | PRINT_BIN,
+  PRINT_HEX = 4,
+  PRINT_HEX_SERVICE = ACCOUNT_FOR_SERVICE | PRINT_HEX,
+  PRINT_BIN_HEX = PRINT_BIN | PRINT_HEX,
+  PRINT_BIN_HEX_SERVICE = ACCOUNT_FOR_SERVICE | PRINT_BIN_HEX,
+  PRINT_DEC = 8,
+  PRINT_DEC_SERVICE = ACCOUNT_FOR_SERVICE | PRINT_DEC,
+  PRINT_BIN_DEC = PRINT_BIN | PRINT_DEC,
+  PRINT_BIN_DEC_SERVICE = ACCOUNT_FOR_SERVICE | PRINT_BIN_DEC,
+  PRINT_HEX_DEC = PRINT_HEX | PRINT_DEC,
+  PRINT_HEX_DEC_SERVICE = ACCOUNT_FOR_SERVICE | PRINT_HEX_DEC,
+  PRINT_ALL = PRINT_BIN | PRINT_HEX | PRINT_DEC,
+  PRINT_ALL_SERVICE = ACCOUNT_FOR_SERVICE | PRINT_ALL
+} S21_FLAGS;
+
+int len_of_int(uint32_t value);
+
+void s21_print_bits(const uint32_t data[], const uint32_t from,
+                    const uint32_t amount);
+
+void s21_read_bits_and_print(const uint32_t value[], const uint32_t from,
+                             const uint32_t amount);
+
+void s21_print_hex_bin(const uint32_t value[], uint32_t intfield_size,
+                       uint32_t exponent, uint8_t flags);
+
+s21_decimal s21_atod(const char *str);
+
 #endif  // S21_DECIMAL_H
