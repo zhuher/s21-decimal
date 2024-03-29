@@ -49,10 +49,10 @@ START_TEST(add_test4) {
 
   // 1.0 + 10 = 11
   ck_assert_msg(s21_add(d2, d1, &res2) == 0, "add_test4.2 FAIL");
-  ck_assert_msg(res1.bits[0] == res1.bits[0], "add_test4.2 FAIL");
-  ck_assert_msg(res1.bits[1] == res1.bits[1], "add_test4.2 FAIL");
-  ck_assert_msg(res1.bits[2] == res1.bits[2], "add_test4.2 FAIL");
-  ck_assert_msg(res1.bits[3] == res1.bits[3], "add_test4.2 FAIL");
+  ck_assert_msg(res1.bits[0] == res2.bits[0], "add_test4.2 FAIL");
+  ck_assert_msg(res1.bits[1] == res2.bits[1], "add_test4.2 FAIL");
+  ck_assert_msg(res1.bits[2] == res2.bits[2], "add_test4.2 FAIL");
+  ck_assert_msg(res1.bits[3] == res2.bits[3], "add_test4.2 FAIL");
 }
 END_TEST
 

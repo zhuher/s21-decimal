@@ -9,13 +9,6 @@
 
 #define S21_MAX_DECIMAL_EXPONENT 28
 
-// #ifndef S21_DECIMAL_TEST  // We internally link some functions, unless we are
-// testing
-// #define S21_STATIC_KEYWORD static inline
-// #else
-#define S21_STATIC_KEYWORD
-// #endif
-
 /* Most significant word MSB-LSB: 1 bit sign, 7 unused bits, 8 bits exponent,
  * 16 unused bits, other words contain mantissa
  */
@@ -306,83 +299,40 @@ int s21_negate(s21_decimal value, s21_decimal *result);
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-
 #define IABS(a) ((a) > 0 ? (a) : -(a))
 
-S21_STATIC_KEYWORD void s21_swap(uint32_t *a, uint32_t *b);
+uint32_t s21_level_mantissae(s21_decimal *a, s21_decimal *b,
+                             uint32_t a_double_mantissa[],
+                             uint32_t b_double_mantissa[],
+                             uint32_t intfield_size, int16_t *exp_diff);
 
-S21_STATIC_KEYWORD uint32_t s21_level_mantissae(s21_decimal *a, s21_decimal *b,
-                                                uint32_t a_double_mantissa[],
-                                                uint32_t b_double_mantissa[],
-                                                uint32_t intfield_size,
-                                                int16_t *exp_diff);
+uint32_t s21_add_intfield(const uint32_t operand1[], const uint32_t operand2[],
+                          uint32_t result[], uint32_t intfield_size);
 
-S21_STATIC_KEYWORD uint32_t s21_add_intfield(const uint32_t operand1[],
-                                             const uint32_t operand2[],
-                                             uint32_t result[],
-                                             uint32_t intfield_size);
+int s21_sub_intfield(const uint32_t operand1[], const uint32_t operand2[],
+                     uint32_t result[], uint32_t intfield_size);
 
-S21_STATIC_KEYWORD int s21_sub_intfield(const uint32_t operand1[],
-                                        const uint32_t operand2[],
-                                        uint32_t result[],
-                                        uint32_t intfield_size);
+int s21_mul_intfield(const uint32_t operand1[], const uint32_t operand2[],
+                     uint32_t result[], uint32_t intfield_size);
 
-S21_STATIC_KEYWORD int s21_mul_intfield(const uint32_t operand1[],
-                                        const uint32_t operand2[],
-                                        uint32_t result[],
-                                        uint32_t intfield_size);
+void s21_left_shift_intfield(const uint32_t operand[], uint32_t shift,
+                             uint32_t result[], uint32_t intfield_size,
+                             uint32_t *carry);
 
-S21_STATIC_KEYWORD void s21_left_shift_intfield(const uint32_t operand[],
-                                                uint32_t shift,
-                                                uint32_t result[],
-                                                uint32_t intfield_size,
-                                                uint32_t *carry);
+void s21_div_intfield(const uint32_t dividend[], const uint32_t divisor[],
+                      uint32_t result[], uint32_t remainder[],
+                      uint32_t intfield_size);
 
-S21_STATIC_KEYWORD void s21_right_shift_intfield(const uint32_t operand[],
-                                                 uint32_t shift,
-                                                 uint32_t result[],
-                                                 uint32_t intfield_size,
-                                                 uint32_t *carry);
+uint8_t s21_is_decimal_divisible_by_2_5_10(uint32_t value[],
+                                           uint32_t intfield_size);
 
-S21_STATIC_KEYWORD void s21_left_rotate_intfield(const uint32_t operand[],
-                                                 uint32_t shift,
-                                                 uint32_t result[],
-                                                 uint32_t intfield_size);
+int16_t s21_rmemcmp(const void *lhs, const void *rhs, uint32_t size);
 
-S21_STATIC_KEYWORD void s21_right_rotate_intfield(const uint32_t operand[],
-                                                  uint32_t shift,
-                                                  uint32_t result[],
-                                                  uint32_t intfield_size);
+uint32_t s21_read_bits(const uint32_t data[], const uint32_t bit_offset,
+                       const uint32_t bit_count);
 
-S21_STATIC_KEYWORD void s21_invert_intfield(const uint32_t operand[],
-                                            uint32_t result[],
-                                            uint32_t intfield_size);
-
-S21_STATIC_KEYWORD void s21_2s_complement_intfield(const uint32_t operand[],
-                                                   uint32_t result[],
-                                                   uint32_t intfield_size);
-
-S21_STATIC_KEYWORD void s21_div_intfield(const uint32_t dividend[],
-                                         const uint32_t divisor[],
-                                         uint32_t result[],
-                                         uint32_t remainder[],
-                                         uint32_t intfield_size);
-
-S21_STATIC_KEYWORD uint8_t
-s21_is_decimal_divisible_by_2_5_10(uint32_t value[], uint32_t intfield_size);
-
-S21_STATIC_KEYWORD int16_t s21_rmemcmp(const void *lhs, const void *rhs,
-                                       uint32_t size);
-
-S21_STATIC_KEYWORD uint32_t s21_read_bits(const uint32_t data[],
-                                          const uint32_t bit_offset,
-                                          const uint32_t bit_count);
-
-S21_STATIC_KEYWORD uint8_t *s21_dtoa(const uint32_t data[], uint32_t exponent,
-                                     uint32_t intfield_size, uint8_t *str);
-
-S21_STATIC_KEYWORD s21_decimal s21_atod(const char *str);
+uint8_t *s21_dtoa(const uint32_t data[], uint32_t exponent,
+                  uint32_t intfield_size, uint8_t *str);
 
 #define s21_read_bit(data, bit_offset) s21_read_bits(data, bit_offset, 1)
 
@@ -394,7 +344,6 @@ S21_STATIC_KEYWORD s21_decimal s21_atod(const char *str);
 #define s21_is_decimal_negative(decimal) \
   ((decimal).bits[S21_DECIMAL_SIZE_IN_INTS - 1] >> 31 & 0x1)
 
-S21_STATIC_KEYWORD
 void s21_write_bits(uint32_t data[], const uint32_t value,
                     const uint32_t absolute_offset, const uint32_t bit_count);
 
@@ -407,44 +356,10 @@ void s21_write_bits(uint32_t data[], const uint32_t value,
 #define s21_write_sign(decimal, value) \
   s21_write_bits((decimal).bits, value, S21_DECIMAL_SIZE_IN_BITS - 1, 1)
 
-S21_STATIC_KEYWORD int s21_toggle_bit(uint32_t data[],
-                                      const uint32_t bit_offset);
+uint32_t s21_get_top_bit_pos(const uint32_t data[], uint32_t intfield_size);
 
-S21_STATIC_KEYWORD uint32_t s21_get_top_bit_pos(const uint32_t data[],
-                                                uint32_t intfield_size);
-
-S21_STATIC_KEYWORD uint8_t s21_is_intfield_zero(const uint32_t intfield[],
-                                                uint32_t intfield_size);
-
-int len_of_int(uint32_t value);
-
-void s21_print_bits(const uint32_t data[], const uint32_t from,
-                    const uint32_t amount);
-
-void s21_read_bits_and_print(const uint32_t value[], const uint32_t from,
-                             const uint32_t amount);
-
-void s21_print_hex_bin(const uint32_t value[], uint32_t intfield_size,
-                       uint32_t exponent, uint8_t flags);
+uint8_t s21_is_intfield_zero(const uint32_t intfield[], uint32_t intfield_size);
 
 void s21_shrink(uint32_t data[], uint32_t intfield_size, int16_t *exponent);
-
-typedef enum {
-  ACCOUNT_FOR_SERVICE = 1,
-  PRINT_BIN = 2,
-  PRINT_BIN_SERVICE = ACCOUNT_FOR_SERVICE | PRINT_BIN,
-  PRINT_HEX = 4,
-  PRINT_HEX_SERVICE = ACCOUNT_FOR_SERVICE | PRINT_HEX,
-  PRINT_BIN_HEX = PRINT_BIN | PRINT_HEX,
-  PRINT_BIN_HEX_SERVICE = ACCOUNT_FOR_SERVICE | PRINT_BIN_HEX,
-  PRINT_DEC = 8,
-  PRINT_DEC_SERVICE = ACCOUNT_FOR_SERVICE | PRINT_DEC,
-  PRINT_BIN_DEC = PRINT_BIN | PRINT_DEC,
-  PRINT_BIN_DEC_SERVICE = ACCOUNT_FOR_SERVICE | PRINT_BIN_DEC,
-  PRINT_HEX_DEC = PRINT_HEX | PRINT_DEC,
-  PRINT_HEX_DEC_SERVICE = ACCOUNT_FOR_SERVICE | PRINT_HEX_DEC,
-  PRINT_ALL = PRINT_BIN | PRINT_HEX | PRINT_DEC,
-  PRINT_ALL_SERVICE = ACCOUNT_FOR_SERVICE | PRINT_ALL
-} S21_FLAGS;
 
 #endif  // S21_DECIMAL_H
