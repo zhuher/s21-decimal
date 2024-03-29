@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "../s21_decimal.h"
 
@@ -239,9 +240,9 @@ void s21_div_and_print(s21_decimal *dividend, s21_decimal *divisor,
 }
 int main() {
   s21_decimal dec, ced, ded;
-  s21_memset(dec.bits, 0, sizeof(dec.bits));
-  s21_memset(ced.bits, 0, sizeof(ced.bits));
-  s21_memset(ded.bits, 0, sizeof(ded.bits));
+  memset(dec.bits, 0, sizeof(dec.bits));
+  memset(ced.bits, 0, sizeof(ced.bits));
+  memset(ded.bits, 0, sizeof(ded.bits));
   for (uint32_t i = 0; i < S21_DECIMAL_SIZE_IN_BITS; ++i) {
     uint32_t temp = 0;
     printf("%u\n", temp);
@@ -300,7 +301,7 @@ int main() {
   s21_write_bits_and_print(&dec, 43, 8, 150, PRINT_ALL_SERVICE);
   s21_shift_left_and_print(&dec, 50, PRINT_ALL_SERVICE);
   s21_decimal dummy;
-  s21_memset(dummy.bits, 0, sizeof(dummy.bits));
+  memset(dummy.bits, 0, sizeof(dummy.bits));
   s21_print_hex_bin(
       dummy.bits, S21_DECIMAL_SIZE_IN_INTS,
       s21_get_exponent(dummy) | (s21_is_decimal_negative(dummy) << 15),
@@ -452,7 +453,7 @@ int main() {
   // for (uint32_t i = 5; i < 6; --i) printf("%u ", quo[i]);
   // printf("\nRemainder: ");
   // for (uint32_t i = 5; i < 6; --i) printf("%u ", rem[i]);
-  // s21_memset(test, 0, sizeof(test));
+  // memset(test, 0, sizeof(test));
   // printf("\n");
   // test[0] = 678;
   // s21_mul_intfield(test, powers_of_ten[27], test, 6);
@@ -462,8 +463,8 @@ int main() {
   // printf("\nRemainder: ");
   // for (uint32_t i = 5; i < 6; --i) printf("%u ", rem[i]);
   // printf("\n");
-  // s21_memset(quo, 0, sizeof(quo));
-  // s21_memset(rem, 0, sizeof(rem));
+  // memset(quo, 0, sizeof(quo));
+  // memset(rem, 0, sizeof(rem));
   // s21_div_intfield((uint32_t[3]){3047500985, 1266874889, 4},
   // powers_of_ten[9],
   //                  quo, rem, 3);

@@ -372,13 +372,6 @@ S21_STATIC_KEYWORD void s21_div_intfield(const uint32_t dividend[],
 S21_STATIC_KEYWORD uint8_t
 s21_is_decimal_divisible_by_2_5_10(uint32_t value[], uint32_t intfield_size);
 
-S21_STATIC_KEYWORD void *s21_memset(void *data, uint8_t value, uint32_t size);
-
-S21_STATIC_KEYWORD void *s21_memcpy(void *dest, const void *src, uint32_t size);
-
-S21_STATIC_KEYWORD void *s21_memmove(void *dest, const void *src,
-                                     uint32_t size /*in bytes */);
-
 S21_STATIC_KEYWORD int16_t s21_rmemcmp(const void *lhs, const void *rhs,
                                        uint32_t size);
 
