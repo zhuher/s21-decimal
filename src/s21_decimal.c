@@ -65,22 +65,9 @@ int s21_add(s21_decimal v1, s21_decimal v2, s21_decimal *result) {
                        v2_double_mantissa, S21_DOUBLE_MANTISSA_SIZE);
     }
     if (rval == OK) {
-      // printf("\nres_double_mantissa: ");
-      // s21_print_hex_bin(res_double_mantissa, S21_DOUBLE_MANTISSA_SIZE, 0,
-      //                   PRINT_ALL);
       s21_div_bitfield(res_double_mantissa, powers_of_ten[excess_exp],
                        res_double_mantissa, v1_double_mantissa,
                        S21_DOUBLE_MANTISSA_SIZE);
-      // printf("\nshrunken res_double_mantissa: ");
-      // s21_print_hex_bin(res_double_mantissa, S21_DOUBLE_MANTISSA_SIZE,
-      // max_exp,
-      //                   PRINT_ALL);
-      // // printf("\nremainder: ");
-      // // s21_print_hex_bin(v1_double_mantissa, S21_DOUBLE_MANTISSA_SIZE, 0,
-      // //                   PRINT_ALL);
-      // // printf("\ntestfield: ");
-      // // s21_print_hex_bin(v2_double_mantissa, S21_DOUBLE_MANTISSA_SIZE, 0,
-      // //                   PRINT_ALL);
       if (excess_exp) {
         int16_t v_cmp2 = s21_rmemcmp(v1_double_mantissa, v2_double_mantissa,
                                      sizeof(v1_double_mantissa));
@@ -89,39 +76,9 @@ int s21_add(s21_decimal v1, s21_decimal v2, s21_decimal *result) {
                            res_double_mantissa, S21_DOUBLE_MANTISSA_SIZE);
       }
       max_exp -= excess_exp;
-      // // s21_div_bitfield(res_double_mantissa, powers_of_ten[1],
-      // // res_double_mantissa,
-      // //                  v1_double_mantissa, S21_DOUBLE_MANTISSA_SIZE);
-      // // if ((v1_double_mantissa[0] == 5 && s21_read_bit(res_double_mantissa,
-      // 0))
-      // // ||
-      // //     v1_double_mantissa[0] > 5)
-      // //   s21_add_intfield(res_double_mantissa, powers_of_ten[0],
-      // //                    res_double_mantissa, S21_DOUBLE_MANTISSA_SIZE);
-      // // max_exp += 1;
-      // // s21_shrink(res_double_mantissa, S21_DOUBLE_MANTISSA_SIZE, &max_exp);
-      // // printf("\nshrunken res_double_mantissa: ");
-      // // s21_print_hex_bin(res_double_mantissa, S21_DOUBLE_MANTISSA_SIZE, 0,
-      // //                   PRINT_ALL);
-      // printf("\nres_double_mantissa: ");
-      // s21_print_hex_bin(res_double_mantissa, S21_DOUBLE_MANTISSA_SIZE, 0,
-      //                   PRINT_ALL);
-      // s21_div_bitfield(res_double_mantissa, powers_of_ten[max_exp],
-      //                  res_double_mantissa, NULL, S21_DOUBLE_MANTISSA_SIZE);
-      // max_exp += 1;
-      // s21_shrink(res_double_mantissa, S21_DOUBLE_MANTISSA_SIZE, &max_exp);
-      // printf("\nshrunken res_double_mantissa: ");
-      // s21_print_hex_bin(res_double_mantissa, S21_DOUBLE_MANTISSA_SIZE, 0,
-      //                   PRINT_ALL);
       s21_shrink(res_double_mantissa, S21_DOUBLE_MANTISSA_SIZE, &max_exp);
       memmove(result, res_double_mantissa,
               (S21_MANTISSA_SIZE) * sizeof(result->bits[0]));
-      // s21_write_sign(*result, v_cmp < 0 ? s21_is_decimal_negative(v2)
-      //                                   : s21_is_decimal_negative(v1));
-      // printf("res_double_mantissa: ");
-      // s21_print_hex_bin(res_double_mantissa, S21_DOUBLE_MANTISSA_SIZE,
-      // max_exp,
-      //                   PRINT_ALL);
       if (s21_get_top_bit_pos(res_double_mantissa, S21_DOUBLE_MANTISSA_SIZE) >
           (S21_DOUBLE_MANTISSA_SIZE << 4) - 1)
         rval = s21_is_decimal_negative(*result) ? TOO_SMALL : TOO_BIG;
@@ -132,6 +89,7 @@ int s21_add(s21_decimal v1, s21_decimal v2, s21_decimal *result) {
   }
   return rval;
 }
+
 uint32_t s21_add_intfield(const uint32_t operand1[], const uint32_t operand2[],
                           uint32_t result[], uint32_t intfield_size) {
   uint32_t carry = 0;
@@ -207,9 +165,6 @@ int s21_mul(s21_decimal v1, s21_decimal v2, s21_decimal *result) {
                        v2_double_mantissa, S21_DOUBLE_MANTISSA_SIZE);
     }
     if (rval == OK) {
-      // printf("\nres_double_mantissa: ");
-      // s21_print_hex_bin(res_double_mantissa, S21_DOUBLE_MANTISSA_SIZE, 0,
-      //                   PRINT_ALL);
       s21_div_bitfield(res_double_mantissa, powers_of_ten[excess_exp],
                        res_double_mantissa, v1_double_mantissa,
                        S21_DOUBLE_MANTISSA_SIZE);
@@ -222,9 +177,6 @@ int s21_mul(s21_decimal v1, s21_decimal v2, s21_decimal *result) {
       }
       exponent -= excess_exp;
       s21_shrink(res_double_mantissa, S21_DOUBLE_MANTISSA_SIZE, &exponent);
-      // printf("\nshrunken res_double_mantissa: ");
-      // s21_print_hex_bin(res_double_mantissa, S21_DOUBLE_MANTISSA_SIZE, 0,
-      //                   PRINT_ALL);
       memcpy(result->bits, res_double_mantissa,
              (S21_MANTISSA_SIZE) * sizeof(res_double_mantissa[0]));
       s21_set_exponent(*result, exponent);
@@ -239,6 +191,7 @@ int s21_mul(s21_decimal v1, s21_decimal v2, s21_decimal *result) {
   }
   return rval;
 }
+
 int s21_mul_intfield(const uint32_t operand1[], const uint32_t operand2[],
                      uint32_t result[], uint32_t intfield_size) {
   uint32_t product[intfield_size << 1];
@@ -256,6 +209,7 @@ int s21_mul_intfield(const uint32_t operand1[], const uint32_t operand2[],
   memcpy(result, product, intfield_size * sizeof(result[0]));
   return OK;
 }
+
 int s21_div(s21_decimal v1, s21_decimal v2, s21_decimal *result) {
   int32_t rval = OK;
   if (!(result && s21_is_decimal_valid(v1) && s21_is_decimal_valid(v2))) {
@@ -277,25 +231,12 @@ int s21_div(s21_decimal v1, s21_decimal v2, s21_decimal *result) {
            (S21_MANTISSA_SIZE) * sizeof(v1_double_mantissa[0]));
     memcpy(v2_double_mantissa, v2.bits,
            (S21_MANTISSA_SIZE) * sizeof(v2_double_mantissa[0]));
-    // printf("v1_double_mantissa: ");
-    // s21_print_hex_bin(v1_double_mantissa, S21_DOUBLE_MANTISSA_SIZE, 0,
-    //                   PRINT_ALL);
-    // printf("\nv2_double_mantissa: ");
-    // s21_print_hex_bin(v2_double_mantissa, S21_DOUBLE_MANTISSA_SIZE, 0,
-    //                   PRINT_ALL);
     s21_mul_intfield(v1_double_mantissa,
                      powers_of_ten[S21_MAX_DECIMAL_EXPONENT],
                      v1_double_mantissa, S21_DOUBLE_MANTISSA_SIZE);
-    // printf("\nexpanded v1_double_mantissa: ");
-    // s21_print_hex_bin(v1_double_mantissa, S21_DOUBLE_MANTISSA_SIZE, 0,
-    //                   PRINT_ALL);
     res_exp = (int16_t)(28 + (v1_exp - v2_exp));
-    // printf("\nres_exp: %d", res_exp);
     s21_div_bitfield(v1_double_mantissa, v2_double_mantissa,
                      res_double_mantissa, S21_NULL, S21_DOUBLE_MANTISSA_SIZE);
-    // printf("\nres_double_mantissa: ");
-    // s21_print_hex_bin(res_double_mantissa, S21_DOUBLE_MANTISSA_SIZE, 0,
-    //                   PRINT_ALL);
     s21_shrink(res_double_mantissa, S21_DOUBLE_MANTISSA_SIZE, &res_exp);
     memcpy(result->bits, res_double_mantissa,
            (S21_MANTISSA_SIZE) * sizeof(res_double_mantissa[0]));
@@ -332,9 +273,11 @@ void s21_div_bitfield(const uint32_t dividend[], const uint32_t divisor[],
 int s21_is_less(s21_decimal v1, s21_decimal v2) {  // TODO
   return s21_is_greater(v2, v1);
 }
+
 int s21_is_less_or_equal(s21_decimal v1, s21_decimal v2) {
   return s21_is_less(v1, v2) || s21_is_equal(v1, v2);
 }
+
 int s21_is_greater(s21_decimal v1, s21_decimal v2) {
   uint8_t is_v1_zero = s21_is_intfield_zero(v1.bits, S21_MANTISSA_SIZE),
           is_v2_zero = s21_is_intfield_zero(v2.bits, S21_MANTISSA_SIZE),
@@ -371,9 +314,11 @@ int s21_is_greater(s21_decimal v1, s21_decimal v2) {
   }
   return rval;
 }
+
 int s21_is_greater_or_equal(s21_decimal v1, s21_decimal v2) {
   return s21_is_greater(v1, v2) || s21_is_equal(v1, v2);
 }
+
 int s21_is_equal(s21_decimal v1, s21_decimal v2) {
   uint8_t exit = FALSE, rval = TRUE;
   uint8_t is_v1_zero = s21_is_intfield_zero(v1.bits, S21_MANTISSA_SIZE);
@@ -402,9 +347,11 @@ int s21_is_equal(s21_decimal v1, s21_decimal v2) {
   }
   return rval;
 }
+
 int s21_is_not_equal(s21_decimal v1, s21_decimal v2) {
   return !s21_is_equal(v1, v2);
 }
+
 int s21_from_int_to_decimal(int src, s21_decimal *dst) {
   int32_t rval = OK;
   if (!dst)
@@ -416,13 +363,13 @@ int s21_from_int_to_decimal(int src, s21_decimal *dst) {
   }
   return rval;
 }
+
 int s21_from_float_to_decimal(float src, s21_decimal *dst) {
   int32_t rval = OK;
   if (!dst)
     rval = CALC_ERROR;
   else {
     memset(dst, 0, sizeof(dst->bits));
-
     if (isinf(src) || isnan(src) || fabsf(src) > S21_MAXIMUM_FLOAT ||
         (fabsf(src) > 0 && fabsf(src) < S21_SMALLEST_FLOAT))
       rval = CONVERT_ERROR;
@@ -431,30 +378,11 @@ int s21_from_float_to_decimal(float src, s21_decimal *dst) {
       char str[len + 1];
       snprintf(str, len + 1, "%.6E", src);
       *dst = s21_atod(str);
-      // if (s21_get_exponent(*dst) > 7) {
-      //   s21_set_exponent(*dst, 7);
-      // }
-      //////////////////////////
-      // int sign = ((src < 0) ? 1 : 0);
-      // src = fabsf(src);
-      // int tmp = (int)src, exp = 0;
-      // while (src - ((float)tmp / (powf(10, (float)exp))) != 0) {
-      //   ++exp;
-      //   if (exp > S21_MAX_DECIMAL_EXPONENT) {
-      //     rval = CONVERT_ERROR;
-      //     break;
-      //   }
-      //   tmp = (int)(src * (powf(10, (float)exp)));
-      // }
-      // if (rval == OK) {
-      //   s21_from_int_to_decimal(tmp, dst);
-      //   s21_set_exponent(*dst, exp);
-      //   s21_write_sign(*dst, sign);
-      // }
     }
   }
   return rval;
 }
+
 int s21_from_decimal_to_int(s21_decimal src, int *dst) {
   int32_t rval = OK;
   if (!(dst && s21_is_decimal_valid(src)))
@@ -478,6 +406,7 @@ int s21_from_decimal_to_int(s21_decimal src, int *dst) {
   }
   return rval;
 }
+
 int s21_from_decimal_to_float(s21_decimal src, float *dst) {
   int32_t rval = OK;
   if (!(dst && s21_is_decimal_valid(src)))
@@ -511,6 +440,7 @@ int s21_floor(s21_decimal value, s21_decimal *result) {
   }
   return rval;
 }
+
 int s21_round(s21_decimal value, s21_decimal *result) {
   int32_t rval = OK;
   if (!(result && s21_is_decimal_valid(value)))
@@ -530,6 +460,7 @@ int s21_round(s21_decimal value, s21_decimal *result) {
   }
   return rval;
 }
+
 int s21_truncate(s21_decimal value, s21_decimal *result) {
   int32_t rval = OK;
   if (!(result && s21_is_decimal_valid(value)))
@@ -702,6 +633,7 @@ uint8_t s21_is_intfield_zero(const uint32_t intfield[],
   }
   return rval;
 }
+
 void s21_shrink(uint32_t data[], uint32_t intfield_size, int16_t *exponent) {
   uint32_t rem[intfield_size];
   while ((*exponent &&
@@ -716,68 +648,16 @@ void s21_shrink(uint32_t data[], uint32_t intfield_size, int16_t *exponent) {
   }
 }
 
-int len_of_int(uint32_t value) {
-  if (value >= 1000000000) return 10;
-  if (value >= 100000000) return 9;
-  if (value >= 10000000) return 8;
-  if (value >= 1000000) return 7;
-  if (value >= 100000) return 6;
-  if (value >= 10000) return 5;
-  if (value >= 1000) return 4;
-  if (value >= 100) return 3;
-  if (value >= 10) return 2;
-  return 1;
-}
-
-void s21_print_bits(const uint32_t data[], const uint32_t from,
-                    const uint32_t amount) {
-  uint32_t i = from + amount - 1;
-  while (i < from + amount) {
-    uint32_t bit = s21_read_bit(data, i);
-    printf("%s%u\x1B[0m", bit ? "\x1B[32m" : "\x1B[31m", bit);
-    if (i == from) break;
-    --i;
-  }
-}
-
-void s21_read_bits_and_print(const uint32_t value[], const uint32_t from,
-                             const uint32_t amount) {
-  uint32_t width = len_of_int(S21_DECIMAL_SIZE_IN_BITS);
-  printf("Bits %*u to %*u: ", width, from, width, from + amount - 1);
-  s21_print_bits(value, from, amount);
-}
-
-void s21_print_hex_bin(const uint32_t value[], uint32_t intfield_size,
-                       uint32_t exponent, uint8_t flags) {
-  if (flags & PRINT_DEC) {
-    uint8_t decstr[200] = {0};
-    printf("%s\n",
-           s21_dtoa(value, exponent,
-                    intfield_size - (flags & ACCOUNT_FOR_SERVICE), decstr));
-  }
-  for (uint32_t i = 0;
-       i < intfield_size && ((flags & PRINT_BIN) || (flags & PRINT_HEX)); ++i) {
-    if (flags & PRINT_BIN) s21_read_bits_and_print(value, i * 32, 32);
-    if (flags & PRINT_HEX)
-      printf("%s%08X %-10u ", (flags & PRINT_BIN) ? " " : "", value[i],
-             value[i]);
-    printf("%s", i < intfield_size - 1 && (flags & PRINT_ALL) ? "\n" : "");
-  }
-  // Print sign and exponent
-  if (flags & PRINT_BIN_HEX && flags & ACCOUNT_FOR_SERVICE)
-    printf(" * %c1e-%u\n", (value[intfield_size - 1] >> 31) & 1 ? '-' : '+',
-           exponent & 0xFF);
-}
 s21_decimal s21_atod(const char *str) {
   s21_size_t len = strnlen(str, 200);
   int16_t exp = 0;
   char str_copy[len + 1];
   memcpy(str_copy, str, len + 1);
   s21_decimal accumulator = {0};
-  uint32_t idx = 0, layer[S21_DOUBLE_MANTISSA_SIZE >> 1];
+  uint32_t idx = 0, layer[S21_MANTISSA_SIZE];
   memset(layer, 0, sizeof(layer));
   if (len && str_copy[0] == '-') {
-    s21_write_sign(accumulator, TRUE);
+    s21_write_sign(accumulator, 1);
     ++idx;
   }
   for (; idx < len; ++idx) {
@@ -807,13 +687,13 @@ s21_decimal s21_atod(const char *str) {
     } else {
       layer[0] = str_copy[idx] - '0';
       s21_mul_intfield(accumulator.bits, powers_of_ten[1], accumulator.bits,
-                       S21_DOUBLE_MANTISSA_SIZE >> 1);
+                       S21_MANTISSA_SIZE);
       s21_add_intfield(accumulator.bits, layer, accumulator.bits,
-                       S21_DOUBLE_MANTISSA_SIZE >> 1);
+                       S21_MANTISSA_SIZE);
     }
   }
   exp = s21_get_exponent(accumulator);
-  s21_shrink(accumulator.bits, S21_DOUBLE_MANTISSA_SIZE >> 1, &exp);
+  s21_shrink(accumulator.bits, S21_MANTISSA_SIZE, &exp);
   s21_set_exponent(accumulator, exp);
   return accumulator;
 }
