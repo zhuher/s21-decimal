@@ -649,7 +649,7 @@ void s21_shrink(uint32_t data[], uint32_t intfield_size, int16_t *exponent) {
 }
 
 s21_decimal s21_atod(const char *str) {
-  s21_size_t len = strnlen(str, 200);
+  s21_size_t len = strlen(str);
   int16_t exp = 0;
   char str_copy[len + 1];
   memcpy(str_copy, str, len + 1);
@@ -669,7 +669,7 @@ s21_decimal s21_atod(const char *str) {
           break;
         }
       }
-      exp = (int16_t)(strnlen(str_copy, 200) - idx - 1);
+      exp = (int16_t)(strlen(str_copy) - idx - 1);
       if (eidx < len) str_copy[eidx] = 'e';
       s21_set_exponent(accumulator, exp);
       continue;
