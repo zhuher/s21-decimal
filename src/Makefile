@@ -24,7 +24,7 @@ test: s21_decimal.a
 	./test
 
 gcov_report: s21_decimal.a
-	gcc $(CFLAGS) $(COVFLAGS) test.c s21_decimal.a -o gcov $(CHECK_FLAGS)
+	gcc $(CFLAGS) $(COVFLAGS) test.c s21_decimal.c -o gcov $(CHECK_FLAGS)
 	./gcov
 	lcov -o gcov.info -c -d .
 	genhtml -o report gcov.info
